@@ -5,6 +5,12 @@
  */
 export type { UsageGrid, UsageCell, UsageStatus, Provider, Period } from '../../../preload'
 export type { HostEntry, SshAuth } from '../../../preload'
+export type {
+  ConnectionInput,
+  ConnectionTestResult,
+  RegisterHostInput,
+  RegisterHostResult
+} from '../../../preload'
 
 import type { HostEntry } from '../../../preload'
 

@@ -4,6 +4,12 @@ import type { UsageGrid } from '../main/usage/types'
 // 렌더러가 쓰는 데이터 타입 재노출(컴파일타임 전용 — 런타임 경계 불변)
 export type { UsageGrid, UsageCell, UsageStatus, Provider, Period } from '../main/usage/types'
 export type { HostEntry, SshAuth } from '../main/hosts/types'
+export type {
+  ConnectionInput,
+  ConnectionTestResult,
+  RegisterHostInput,
+  RegisterHostResult
+} from '../main/hosts'
 
 /**
  * 렌더러에 노출되는 안전한 API (contextBridge 화이트리스트).
