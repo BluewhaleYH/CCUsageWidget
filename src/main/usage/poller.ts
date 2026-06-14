@@ -1,5 +1,6 @@
 import type { BrowserWindow } from 'electron'
-import { getSelectedHost } from '../hosts/repository'
+import { getSelectedHost, updateHost } from '../hosts/repository'
+import type { HostEntry } from '../hosts'
 import { createRunnerForHost, disposeRunner } from '../runnerFactory'
 import { fetchUsageGrid } from './index'
 import type { UsageGrid } from './types'
@@ -48,30 +49,45 @@ class UsagePoller {
     }, POLL_INTERVAL_MS)
   }
 
-  /** 1회 조회 → usage:update 푸시. 중복 폴링은 무시. */
+  /** 1회 조회 → usage:update 푸시 + 연결 상태(lastStatus) 갱신·푸시. 중복 폴링은 무시. */
   async poll(): Promise<void> {
     if (this.polling) return
     this.polling = true
     try {
-      const grid = await this.buildGrid()
-      this.getWindow()?.webContents.send('usage:update', grid)
+      const { grid, host } = await this.buildGrid()
+      const win = this.getWindow()
+      win?.webContents.send('usage:update', grid)
+
+      // 폴링 사이클에 연결 상태 갱신 통합 (CONNECTION_SPEC §3.6)
+      if (host) {
+        const lastStatus = grid.connection
+        updateHost(host.id, { lastStatus, lastCheckedAt: grid.updatedAt })
+        win?.webContents.send('host:status', {
+          id: host.id,
+          lastStatus,
+          lastCheckedAt: grid.updatedAt
+        })
+      }
     } finally {
       this.polling = false
     }
   }
 
-  private async buildGrid(): Promise<UsageGrid> {
+  private async buildGrid(): Promise<{ grid: UsageGrid; host: HostEntry | null }> {
     const now = new Date().toISOString()
     const host = getSelectedHost() ?? null
 
     // 등록/선택된 호스트가 없으면 빈 그리드(연결 안됨)로 푸시
     if (!host) {
-      return { hostId: null, hostAlias: null, updatedAt: now, connection: 'disconnected', cells: [] }
+      return {
+        grid: { hostId: null, hostAlias: null, updatedAt: now, connection: 'disconnected', cells: [] },
+        host: null
+      }
     }
 
     const runner = createRunnerForHost(host.id)
     try {
-      return await fetchUsageGrid(runner, host, now)
+      return { grid: await fetchUsageGrid(runner, host, now), host }
     } finally {
       disposeRunner(runner)
     }

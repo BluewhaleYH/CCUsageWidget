@@ -142,14 +142,6 @@ export function registerIpc(_getWindow: GetWindow): void {
     usagePoller.refreshNow()
     return { ok: true }
   })
-}
 
-/**
- * 호스트 연결 상태를 렌더러로 푸시한다. (CONNECTION_SPEC §3.6 — Phase 3 폴링에서 호출)
- */
-export function sendHostStatus(
-  win: BrowserWindow | null,
-  status: { id: string; lastStatus: HostEntry['lastStatus']; lastCheckedAt: string }
-): void {
-  win?.webContents.send('host:status', status)
+  // host:status 푸시(연결 상태)는 usage/poller.ts의 폴링 사이클에서 수행한다. (CONNECTION_SPEC §3.6)
 }
