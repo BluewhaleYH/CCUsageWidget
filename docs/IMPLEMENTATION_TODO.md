@@ -42,7 +42,7 @@
   - 비고: 실제 전역 설치는 미실행(검수 안전). 안내·동의의 화면 연동은 Phase 4, 원격 실행은 Phase 2에서 SSH 러너로 교체
 
 ## Phase 2 — CONNECTION (원격 연결·호스트 관리) · `CONNECTION_SPEC.md`
-- [ ] `HostEntry` 데이터 모델 정의 + `electron-store` 저장
+- [x] `HostEntry` 데이터 모델 정의 + `electron-store` 저장 — `hosts/types.ts`·`hosts/repository.ts`, store 스키마(hosts/selectedHostId/hostSecrets). 검수: typecheck/build + repository CRUD 스모크 ✓ (이슈 #5)
 - [ ] 자격증명 보안 저장(키 패스프레이즈/비밀번호 → 보안 저장소/`safeStorage`)
 - [ ] `ssh2` 기반 SSH 연결·원격 명령 실행 래퍼(`src/main/ssh`)
 - [ ] IP 등록 플로우(입력 폼 → 연결 테스트 → 저장) — 로직
