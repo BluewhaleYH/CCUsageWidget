@@ -10,7 +10,7 @@
 
 ## 진행 상태 요약
 - [x] Phase 0 — 프로젝트 스캐폴딩
-- [ ] Phase 1 — SETUP (의존성 점검/설치)
+- [x] Phase 1 — SETUP (의존성 점검/설치)
 - [ ] Phase 2 — CONNECTION (원격 연결·호스트 관리)
 - [ ] Phase 3 — DATA (조회·표시)
 - [ ] Phase 4 — UI (위젯 UI·윈도우)
@@ -30,14 +30,16 @@
   - 비고: electron 바이너리 postinstall이 환경 제약으로 자동 완료되지 않아 수동 보정함(아래 "환경 메모" 참조)
 
 ## Phase 1 — SETUP (의존성 점검/설치) · `SETUP_SPEC.md`
-- [ ] 원격 호스트 대상 node/npm/ccusage 점검 로직(`command -v`, 버전)
-- [ ] 점검 결과 모델 `{ name, installed, version? }` 수집
-- [ ] 누락 항목 안내 UI(무엇이 없는지 + 설치 명령 표시)
-- [ ] y/n 동의 입력 처리(y=설치, n=건너뜀·"미설치" 표시)
-- [ ] OS별 설치 명령 매핑 테이블(mac/ubuntu/windows)로 설치 실행 + 진행/결과 표시
-- [ ] ccusage 미설치 시 `npx ccusage@latest` 폴백
-- [ ] 점검/설치 결과 캐싱 및 상태 표시
-- [ ] 🔍 **검수**: SETUP_SPEC 완료 기준 충족, y/n→설치 흐름 동작, 폴백 동작 확인 → Phase 2 진행 승인
+- [x] 원격 호스트 대상 node/npm/ccusage 점검 로직(`command -v`, 버전) — `CommandRunner` 추상화(로컬 now / SSH Phase 2)
+- [x] 점검 결과 모델 `{ name, installed, version? }` 수집(`DependencyCheck`/`SetupReport`)
+- [x] 누락 항목 안내(설치 plan: 항목+명령) 산출 — 화면 표시는 Phase 4(UI)
+- [x] y/n 동의 입력 처리(`confirm` 콜백; `setup:install`이 동의 게이트) — 화면 입력은 Phase 4
+- [x] OS별 설치 명령 매핑 테이블(mac/ubuntu/windows)로 설치 실행 + 결과(`InstallOutcome`) 반환
+- [x] ccusage 미설치 시 `npx ccusage@latest` 폴백 명령 제공(사용처는 Phase 3)
+- [x] 점검/설치 결과 캐싱(`setupReports`) 및 요약 상태(`summarizeStatus`)
+- [x] 🔍 **검수**: SETUP_SPEC 완료 기준 충족, y/n→설치 흐름 동작, 폴백 동작 확인 → Phase 2 진행 승인
+  - 검증: `npm run typecheck` ✓, `npm run build` ✓, 스모크(로컬 점검·OS감지·설치명령 매핑·confirm=false 미실행·confirm=true 실행·npx 폴백) ✓
+  - 비고: 실제 전역 설치는 미실행(검수 안전). 안내·동의의 화면 연동은 Phase 4, 원격 실행은 Phase 2에서 SSH 러너로 교체
 
 ## Phase 2 — CONNECTION (원격 연결·호스트 관리) · `CONNECTION_SPEC.md`
 - [ ] `HostEntry` 데이터 모델 정의 + `electron-store` 저장

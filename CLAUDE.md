@@ -2,8 +2,10 @@
 
 이 파일은 Claude Code(claude.ai/code)가 이 저장소에서 작업할 때 참고하는 가이드입니다.
 
-> ℹ️ 진행 상태: **Phase 0(스캐폴딩) 완료** — electron-vite + React + TS 골격이 생성되어
-> `npm run dev`로 위젯 창이 뜹니다. 이후 단계는 `docs/IMPLEMENTATION_TODO.md`를 따릅니다.
+> ℹ️ 진행 상태: **Phase 1(SETUP) 완료** — 의존성 점검/설치 로직(`src/main/setup/`)과
+> `setup:*` IPC 계약이 구현됨(명령 실행은 `CommandRunner` 추상화: 로컬 now / SSH는 Phase 2).
+> Phase 0 스캐폴딩(electron-vite + React + TS)은 그대로 동작합니다.
+> 다음 단계는 `docs/IMPLEMENTATION_TODO.md`의 Phase 2(CONNECTION)부터 이어갑니다.
 > 코드가 SPEC과 어긋나면 SPEC을 먼저 갱신한 뒤 이 문서도 동기화하세요.
 
 ## 🚀 세션 시작 시 반드시 따를 절차 (Session Startup)
@@ -190,6 +192,7 @@ docs/          # 기능 명세: SETUP_SPEC / CONNECTION_SPEC / DATA_SPEC / UI_SP
 - **TypeScript strict** 유지.
 - **IPC 채널 네이밍**: `<도메인>:<액션>` 형식. 예) `usage:update`, `usage:refresh`,
   `host:add`, `host:list`, `host:test`, `host:switch`, `host:remove`, `host:status`,
+  `setup:check`, `setup:install`, `setup:status`,
   `widget:minimize`, `widget:maximize`, `widget:close`.
 - **SSH·ccusage 접근은 무조건 main 프로세스 경유.** 렌더러/preload에서 직접 실행 금지.
 - **자격증명은 평문 저장 금지** — 보안 저장소/`safeStorage` 사용. store에는 비민감 메타만.

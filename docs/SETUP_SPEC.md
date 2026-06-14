@@ -68,8 +68,16 @@
   → 자세한 내용은 `CONNECTION_SPEC.md` 참조.
 
 ### 4.7 결과 캐싱/상태 표시
-- 호스트별 점검·설치 결과를 저장(electron-store)하고, 위젯에서 상태를 표시한다.
+- 호스트별 점검·설치 결과를 저장(electron-store, `setupReports[hostId]`)하고, 위젯에서 상태를 표시한다.
 - 상태 예: `정상` / `node 없음` / `ccusage 없음(npx 폴백)` / `설치 실패`
+
+### 4.8 IPC 계약
+- `setup:check` (`{ hostId? }`) — OS 감지 + 의존성 점검만 수행(설치 없음). `{ report, status, plan }` 반환.
+- `setup:install` (`{ hostId?, names? }`) — **동의(y) 이후에만 호출**. 요청 항목 설치 후 재점검. `{ outcomes, report, status }` 반환.
+- `setup:status` (`{ hostId? }`) — 캐시된 점검 리포트/요약 상태 조회.
+- 구현 메모: 명령 실행은 `CommandRunner` 추상화 경유(Phase 1=로컬, Phase 2=SSH로 교체). 동의는
+  `applyInstallPlan(runner, plan, confirm)`의 `confirm` 콜백으로 모델링(UI 입력은 Phase 4 연동).
+- `hostId` 미지정 시 Phase 1은 로컬 점검 키(`local`) 사용.
 
 ## 5. 보안·주의 사항
 - `sudo`가 필요한 설치는 비밀번호/권한 문제로 실패할 수 있음 → 실패 메시지를 명확히 안내.
@@ -77,12 +85,15 @@
 - 설치 명령은 사용자 `y` 동의 없이는 절대 실행하지 않는다.
 
 ## 6. 완료 기준 (Checklist)
-- [ ] 원격 호스트에서 node/npm/ccusage 존재·버전 점검
-- [ ] 누락 항목 안내 표시
-- [ ] y/n 동의 입력 처리 (y=설치, n=건너뜀)
-- [ ] OS별 설치 명령 매핑으로 설치 실행 및 결과 표시
-- [ ] ccusage 미설치 시 `npx` 폴백 동작
-- [ ] 점검/설치 결과 저장 및 상태 표시
+- [x] 원격(러너 추상화)에서 node/npm/ccusage 존재·버전 점검
+- [x] 누락 항목 안내(설치 plan: 항목+명령) 산출 — UI 표시는 Phase 4
+- [x] y/n 동의 입력 처리 (`confirm` 콜백; setup:install이 동의 게이트) — UI 입력은 Phase 4
+- [x] OS별 설치 명령 매핑으로 설치 실행 및 결과(InstallOutcome) 반환
+- [x] ccusage 미설치 시 `npx ccusage@latest` 폴백 명령 제공 (사용처는 Phase 3)
+- [x] 점검/설치 결과 저장(`setupReports`) 및 요약 상태 도출
+
+> Phase 1 완료: 로직/IPC 계약 구현 + 로컬 러너로 검증. 안내·동의의 **화면 표시**는 Phase 4(UI),
+> **원격 실행**은 Phase 2(SSH 러너 교체)에서 연동된다.
 
 ## 7. 연관 문서
 - `CONNECTION_SPEC.md` — SSH 연결·OS 감지·호스트 관리

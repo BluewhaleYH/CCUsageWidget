@@ -22,6 +22,17 @@ const api = {
     switch: (direction: unknown): Promise<unknown> => ipcRenderer.invoke('host:switch', direction),
     remove: (id: unknown): Promise<unknown> => ipcRenderer.invoke('host:remove', id)
   },
+  setup: {
+    /** 의존성 점검(설치는 수행하지 않음). { report, status, plan } 반환 */
+    check: (args?: { hostId?: string }): Promise<unknown> =>
+      ipcRenderer.invoke('setup:check', args),
+    /** 동의(y)한 의존성 설치. names 생략 시 누락 전체. { outcomes, report, status } 반환 */
+    install: (args?: { hostId?: string; names?: string[] }): Promise<unknown> =>
+      ipcRenderer.invoke('setup:install', args),
+    /** 캐시된 점검 상태 조회. { report, status } 반환 */
+    status: (args?: { hostId?: string }): Promise<unknown> =>
+      ipcRenderer.invoke('setup:status', args)
+  },
   widget: {
     minimize: (): Promise<void> => ipcRenderer.invoke('widget:minimize'),
     maximize: (): Promise<void> => ipcRenderer.invoke('widget:maximize'),
