@@ -63,6 +63,7 @@ export function assembleGrid(opts: {
     hostId: opts.host?.id ?? null,
     hostAlias: opts.host?.alias ?? null,
     updatedAt: opts.now,
+    status: 'ready',
     connection: opts.fetchResult.connection,
     cells: opts.fetchResult.cells,
     error: opts.error
