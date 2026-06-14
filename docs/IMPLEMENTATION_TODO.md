@@ -50,7 +50,7 @@
 - [x] OS별 별칭 기본값 제안 및 사용자 수정 — `hosts/alias.ts` defaultAlias. 검수: typecheck/build + 매핑 스모크 ✓ (이슈 #13)
 - [x] IP 전환(좌/우 순환) + 현재 선택 상태 영속화 — `hosts/index.ts switchHost/selectHost`. 검수: typecheck/build + 순환 스모크 ✓ (이슈 #17)
 - [x] 항목 수정/삭제 — `hosts/index.ts editHost/deleteHost`(삭제 시 자격증명 제거+선택 전환). 검수: typecheck/build + mock 스모크 ✓ (이슈 #19)
-- [ ] IPC: `host:add` `host:list` `host:test` `host:switch` `host:update` `host:remove` `host:status`
+- [x] IPC: `host:add/list/test/switch/update/remove` + `host:status` 푸시 — `ipc.ts` 실제 핸들러 + createRunnerForHost SSH 교체, preload host.update/onStatus. 검수: typecheck/build ✓ (이슈 #21)
 - [ ] 🔍 **검수**: 키/비밀번호 인증 연결, 등록/전환/별칭 동작, 자격증명 평문 미저장 확인 → Phase 3 진행 승인
 
 ## Phase 3 — DATA (조회·표시) · `DATA_SPEC.md`

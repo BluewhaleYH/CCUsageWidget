@@ -16,11 +16,24 @@ const api = {
     refresh: (): Promise<unknown> => ipcRenderer.invoke('usage:refresh')
   },
   host: {
-    add: (entry: unknown): Promise<unknown> => ipcRenderer.invoke('host:add', entry),
+    /** 등록(연결 테스트 후 저장). args: { input, secret? } */
+    add: (args: unknown): Promise<unknown> => ipcRenderer.invoke('host:add', args),
+    /** 목록 조회. { hosts, selectedHostId } (비밀 미포함) */
     list: (): Promise<unknown> => ipcRenderer.invoke('host:list'),
-    test: (entry: unknown): Promise<unknown> => ipcRenderer.invoke('host:test', entry),
+    /** 연결 테스트 단독 실행. args: { input, secret? } */
+    test: (args: unknown): Promise<unknown> => ipcRenderer.invoke('host:test', args),
+    /** 전환: 'prev'|'next' 순환, 또는 { id } 직접 선택 */
     switch: (direction: unknown): Promise<unknown> => ipcRenderer.invoke('host:switch', direction),
-    remove: (id: unknown): Promise<unknown> => ipcRenderer.invoke('host:remove', id)
+    /** 수정. args: { id, patch, secret? } */
+    update: (args: unknown): Promise<unknown> => ipcRenderer.invoke('host:update', args),
+    /** 삭제. args: { id } */
+    remove: (args: unknown): Promise<unknown> => ipcRenderer.invoke('host:remove', args),
+    /** 연결 상태 푸시 구독(메인→렌더러). 해제 함수를 반환한다. */
+    onStatus: (callback: (status: unknown) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, status: unknown): void => callback(status)
+      ipcRenderer.on('host:status', listener)
+      return () => ipcRenderer.removeListener('host:status', listener)
+    }
   },
   setup: {
     /** 의존성 점검(설치는 수행하지 않음). { report, status, plan } 반환 */
