@@ -73,7 +73,7 @@
   - ⚠️ 미수행(플래그): **원격 호스트 SSH 6종 실조회** — 사용자 호스트 제공 시 수행(SshCommandRunner는 mock 검증 완료)
 
 ## Phase 4 — UI (위젯 UI·윈도우) · `UI_SPEC.md`
-- [ ] frameless/transparent/always-on-top/skipTaskbar 셸 + 드래그 영역
+- [x] frameless/transparent/always-on-top/skipTaskbar 셸 + 드래그 영역 — 렌더러 구조(Header/UsageGrid/StatusBar)+lib/format·view. 검수: typecheck/build + lib 스모크 ✓ (이슈 #47)
 - [ ] 컨트롤 헤더바: ✕ 종료 / ─ 최소화(접기) / □ 최대화(상세 확장)
 - [ ] 최소화=접기(헤더만), 최대화=상세 확장 동작 + 상태 영속화
 - [ ] + 버튼 IP 등록 폼/모달(CONNECTION 로직 연동)

@@ -1,41 +1,38 @@
+import { useState } from 'react'
+import { Header } from './components/Header'
+import { StatusBar } from './components/StatusBar'
+import { UsageGrid } from './components/UsageGrid'
+import { toggleCollapse, toggleExpand, type View } from './lib/view'
+
+/**
+ * 위젯 루트. (UI_SPEC §2)
+ * CB1: 셸 + 컴포넌트 구조 + 뷰(접기/확장) 로컬 상태 골격.
+ * 데이터/호스트 연동(usage·host IPC)은 CB2~ 이후.
+ */
 function App() {
+  const [view, setView] = useState<View>('normal')
+
   return (
-    <div className="widget">
-      <header className="titlebar">
-        <div className="left">
-          <button className="nav" title="이전 호스트" disabled>
-            ◀
-          </button>
-          <span className="alias">CCUsageWidget</span>
-          <button className="nav" title="다음 호스트" disabled>
-            ▶
-          </button>
-          <button className="nav add" title="호스트 등록" disabled>
-            +
-          </button>
-        </div>
-        <div className="controls">
-          <button onClick={() => window.api.widget.minimize()} title="접기">
-            ─
-          </button>
-          <button onClick={() => window.api.widget.maximize()} title="확장">
-            □
-          </button>
-          <button onClick={() => window.api.widget.close()} title="종료">
-            ✕
-          </button>
-        </div>
-      </header>
+    <div className={`widget view-${view}`}>
+      <Header
+        alias="CCUsageWidget"
+        canSwitch={false}
+        onPrev={() => {}}
+        onNext={() => {}}
+        onAdd={() => {}}
+        onMinimize={() => setView(toggleCollapse)}
+        onMaximize={() => setView(toggleExpand)}
+        onClose={() => window.api.widget.close()}
+      />
 
-      <main className="body">
-        <p className="placeholder">CCUsageWidget</p>
-        <p className="hint">Phase 0 — 스캐폴딩 완료</p>
-        <p className="hint">다음: Phase 1 (SETUP)</p>
-      </main>
-
-      <footer className="statusbar">
-        <span>준비됨</span>
-      </footer>
+      {view !== 'collapsed' && (
+        <>
+          <main className="body">
+            <UsageGrid />
+          </main>
+          <StatusBar />
+        </>
+      )}
     </div>
   )
 }
