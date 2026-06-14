@@ -24,3 +24,21 @@ export interface UsageCell {
   outputTokens: number
   totalTokens: number
 }
+
+/**
+ * 한 호스트의 사용량 그리드(2행[기간] × 3열[프로바이더] = 6셀) + 메타. (DATA_SPEC §2.4)
+ * 렌더러로 `usage:update`에 실어 푸시한다.
+ */
+export interface UsageGrid {
+  /** 대상 호스트(없으면 null = 등록된 호스트 없음) */
+  hostId: string | null
+  hostAlias: string | null
+  /** 마지막 갱신 시각(ISO) */
+  updatedAt: string
+  /** SSH 연결 상태 (disconnected → UI "연결 안됨") */
+  connection: 'connected' | 'disconnected'
+  /** 6셀 (provider×period) */
+  cells: UsageCell[]
+  /** 조회 중 발생한 상위 오류(선택) */
+  error?: string
+}

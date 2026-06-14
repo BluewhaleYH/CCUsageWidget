@@ -1,8 +1,16 @@
 import type { CommandRunner } from '../setup'
+import type { HostEntry } from '../hosts'
 import { ccusageArgs } from './commands'
 import { parseUsage } from './parse'
 import { runCcusage } from './run'
-import { PERIODS, PROVIDERS, type Period, type Provider, type UsageCell } from './types'
+import {
+  PERIODS,
+  PROVIDERS,
+  type Period,
+  type Provider,
+  type UsageCell,
+  type UsageGrid
+} from './types'
 
 export * from './types'
 export { ccusageArgs } from './commands'
@@ -40,4 +48,44 @@ export async function fetchUsageCells(runner: CommandRunner): Promise<FetchResul
 
   const connection = results.some((r) => r.ok) ? 'connected' : 'disconnected'
   return { cells: results.map((r) => r.cell), connection }
+}
+
+/**
+ * 조회 결과 + 호스트 메타를 2×3 그리드로 조립한다. (DATA_SPEC §2.4)
+ */
+export function assembleGrid(opts: {
+  host: Pick<HostEntry, 'id' | 'alias'> | null
+  fetchResult: FetchResult
+  now: string
+  error?: string
+}): UsageGrid {
+  return {
+    hostId: opts.host?.id ?? null,
+    hostAlias: opts.host?.alias ?? null,
+    updatedAt: opts.now,
+    connection: opts.fetchResult.connection,
+    cells: opts.fetchResult.cells,
+    error: opts.error
+  }
+}
+
+/** 그리드에서 특정 셀을 꺼낸다(2×3 매핑 — Phase 4 UI 렌더링용). */
+export function getCell(
+  grid: UsageGrid,
+  provider: Provider,
+  period: Period
+): UsageCell | undefined {
+  return grid.cells.find((c) => c.provider === provider && c.period === period)
+}
+
+/**
+ * 러너로 6종을 조회하고 그리드까지 조립한다. (poller가 사용)
+ */
+export async function fetchUsageGrid(
+  runner: CommandRunner,
+  host: Pick<HostEntry, 'id' | 'alias'> | null,
+  now: string
+): Promise<UsageGrid> {
+  const fetchResult = await fetchUsageCells(runner)
+  return assembleGrid({ host, fetchResult, now })
 }
