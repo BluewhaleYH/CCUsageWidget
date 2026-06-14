@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpc } from './ipc'
 import { store } from './store'
+import { usagePoller } from './usage/poller'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -60,6 +61,9 @@ app.whenReady().then(() => {
 
   registerIpc(() => mainWindow)
   createWindow()
+
+  // 30초 사용량 폴링 시작 (DATA_SPEC §2.3) — 현재 선택 호스트만 조회해 usage:update 푸시
+  usagePoller.start(() => mainWindow)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

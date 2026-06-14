@@ -3,15 +3,13 @@ import {
   applyInstallPlan,
   buildInstallPlan,
   getReport,
-  LocalCommandRunner,
   runSetupCheck,
   saveReport,
   summarizeStatus
 } from './setup'
-import type { CommandRunner, DependencyName, InstallOutcome, SetupReport } from './setup'
+import type { DependencyName, InstallOutcome, SetupReport } from './setup'
 import {
   buildSshConfig,
-  credentials,
   deleteHost,
   editHost,
   registerHost,
@@ -24,37 +22,10 @@ import {
   type RegisterHostInput,
   type SwitchDirection
 } from './hosts'
-import { SshCommandRunner } from './ssh/runner'
+import { createRunnerForHost, DEFAULT_HOST_ID, disposeRunner } from './runnerFactory'
+import { usagePoller } from './usage/poller'
 
 type GetWindow = () => BrowserWindow | null
-
-interface NotImplemented {
-  ok: false
-  error: string
-}
-
-/** Phase 3에서 구현될 채널의 임시 응답 */
-function notImplemented(channel: string): NotImplemented {
-  return { ok: false, error: `${channel} not implemented (Phase 0 skeleton)` }
-}
-
-/** hostId 미지정 시 사용하는 로컬 점검 키 (Phase 1) */
-const DEFAULT_HOST_ID = 'local'
-
-/**
- * 호스트별 명령 러너를 만든다 (seam).
- * - hostId가 'local'이거나 호스트를 찾을 수 없으면 로컬 러너(진단·폴백).
- * - 등록된 호스트면 복호화한 자격증명으로 `SshCommandRunner`를 만들어 **원격** 실행.
- *   ⇒ Phase 1의 setup:* 점검/설치가 이 한 곳으로 원격에서 동작한다.
- */
-function createRunnerForHost(hostId: string): CommandRunner {
-  if (hostId === DEFAULT_HOST_ID) return new LocalCommandRunner()
-  const host = repository.getHost(hostId)
-  if (!host) return new LocalCommandRunner()
-  const secret = credentials.getSecret(hostId)
-  const config = buildSshConfig(host, secret)
-  return new SshCommandRunner(config)
-}
 
 /**
  * IPC 채널 등록.
@@ -146,8 +117,10 @@ export function registerIpc(_getWindow: GetWindow): void {
   ipcMain.handle(
     'host:switch',
     (_e, args: SwitchDirection | { id: string }): HostEntry | undefined => {
-      if (typeof args === 'string') return switchHost(args)
-      return selectHost(args.id)
+      const result = typeof args === 'string' ? switchHost(args) : selectHost(args.id)
+      // 전환 시 즉시 1회 갱신 (DATA_SPEC §2.3)
+      usagePoller.refreshNow()
+      return result
     }
   )
 
@@ -164,12 +137,11 @@ export function registerIpc(_getWindow: GetWindow): void {
   // host:status 는 푸시 채널(메인→렌더러). 실제 푸시는 Phase 3의 30초 폴링에서 sendHostStatus로 수행.
 
   // --- usage (DATA_SPEC, Phase 3) ---
-  ipcMain.handle('usage:refresh', () => notImplemented('usage:refresh'))
-}
-
-/** SshCommandRunner면 연결을 닫는다(LocalCommandRunner는 무시). */
-function disposeRunner(runner: CommandRunner): void {
-  if (runner instanceof SshCommandRunner) runner.dispose()
+  // 수동 갱신: 즉시 1회 폴링(타이머 재정렬). 결과는 usage:update 푸시로 전달된다.
+  ipcMain.handle('usage:refresh', () => {
+    usagePoller.refreshNow()
+    return { ok: true }
+  })
 }
 
 /**
