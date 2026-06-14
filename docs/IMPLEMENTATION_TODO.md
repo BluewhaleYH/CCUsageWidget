@@ -47,7 +47,7 @@
 - [x] `ssh2` 기반 SSH 연결·원격 명령 실행 래퍼(`src/main/ssh`) — `SshCommandRunner`(CommandRunner 구현, 연결재사용/255 resolve/dispose). 검수: typecheck/build + ssh2 mock 스모크 ✓ (이슈 #9)
 - [ ] IP 등록 플로우(입력 폼 → 연결 테스트 → 저장) — 로직
 - [x] 연결 테스트(`uname`/`ver` 도달성) + OS 자동 감지 — `hosts/connection.ts`(buildSshConfig+testConnection, detectOs 재사용). 검수: typecheck/build + ssh2/fs mock 스모크 ✓ (이슈 #11)
-- [ ] OS별 별칭 기본값 제안 및 사용자 수정
+- [x] OS별 별칭 기본값 제안 및 사용자 수정 — `hosts/alias.ts` defaultAlias. 검수: typecheck/build + 매핑 스모크 ✓ (이슈 #13)
 - [ ] IP 전환(좌/우 순환) + 현재 선택 상태 영속화
 - [ ] 항목 수정/삭제
 - [ ] IPC: `host:add` `host:list` `host:test` `host:switch` `host:update` `host:remove` `host:status`
