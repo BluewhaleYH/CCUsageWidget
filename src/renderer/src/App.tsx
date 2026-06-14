@@ -1,16 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Header } from './components/Header'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
 import { toggleCollapse, toggleExpand, type View } from './lib/view'
+import type { UsageGrid as Grid } from './lib/types'
 
 /**
  * 위젯 루트. (UI_SPEC §2)
- * CB1: 셸 + 컴포넌트 구조 + 뷰(접기/확장) 로컬 상태 골격.
- * 데이터/호스트 연동(usage·host IPC)은 CB2~ 이후.
+ * usage:update 구독으로 그리드 데이터를 받아 렌더. 호스트 연동(◀▶/+)은 CB3~.
  */
 function App() {
   const [view, setView] = useState<View>('normal')
+  const [grid, setGrid] = useState<Grid | null>(null)
+
+  useEffect(() => {
+    const off = window.api.usage.onUpdate((g) => setGrid(g))
+    // 구독 직후 1회 갱신 요청(초기 푸시 누락 방지)
+    void window.api.usage.refresh()
+    return off
+  }, [])
 
   return (
     <div className={`widget view-${view}`}>
@@ -28,9 +36,9 @@ function App() {
       {view !== 'collapsed' && (
         <>
           <main className="body">
-            <UsageGrid />
+            <UsageGrid grid={grid} />
           </main>
-          <StatusBar />
+          <StatusBar grid={grid} />
         </>
       )}
     </div>
