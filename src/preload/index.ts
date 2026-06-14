@@ -1,4 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { UsageGrid } from '../main/usage/types'
+
+// 렌더러가 쓰는 데이터 타입 재노출(컴파일타임 전용 — 런타임 경계 불변)
+export type { UsageGrid, UsageCell, UsageStatus, Provider, Period } from '../main/usage/types'
 
 /**
  * 렌더러에 노출되는 안전한 API (contextBridge 화이트리스트).
@@ -6,14 +10,14 @@ import { contextBridge, ipcRenderer } from 'electron'
  */
 const api = {
   usage: {
-    /** 사용량 갱신 푸시 구독. 해제 함수를 반환한다. */
-    onUpdate: (callback: (data: unknown) => void): (() => void) => {
-      const listener = (_e: Electron.IpcRendererEvent, data: unknown): void => callback(data)
+    /** 사용량 그리드 푸시 구독(usage:update). 해제 함수를 반환한다. (DATA_SPEC §2.6) */
+    onUpdate: (callback: (grid: UsageGrid) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, grid: UsageGrid): void => callback(grid)
       ipcRenderer.on('usage:update', listener)
       return () => ipcRenderer.removeListener('usage:update', listener)
     },
-    /** 수동 갱신 요청 */
-    refresh: (): Promise<unknown> => ipcRenderer.invoke('usage:refresh')
+    /** 수동 갱신 요청(usage:refresh). 결과는 onUpdate로 전달된다. */
+    refresh: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('usage:refresh')
   },
   host: {
     /** 등록(연결 테스트 후 저장). args: { input, secret? } */
