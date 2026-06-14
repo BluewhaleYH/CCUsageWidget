@@ -65,7 +65,7 @@
 - [x] 폴링 사이클에 연결 상태(`lastStatus`) 갱신 통합 — poller에서 connection→updateHost+host:status 푸시. 검수: typecheck/build + 상태 전이 스모크 ✓ (이슈 #37)
 - [x] 2×3 그리드 데이터 구성(비용 + 토큰) — `usage` UsageGrid/assembleGrid/getCell/fetchUsageGrid. 검수: typecheck/build + 그리드 스모크 ✓ (이슈 #33)
 - [x] 상태 처리: 데이터 없음 "없음", SSH 실패 "연결 안됨", 로딩/에러/갱신시각 — UsageGrid.status + poller 로딩→ready/error. 검수: typecheck/build + 상태 스모크 ✓ (이슈 #39)
-- [ ] IPC: `usage:update`(푸시) / `usage:refresh`(요청)
+- [x] IPC: `usage:update`(푸시=UsageGrid) / `usage:refresh`(요청→refreshNow) — preload 타입 계약 확정. 검수: typecheck/build + 누출 0 ✓ (이슈 #41)
 - [ ] 🔍 **검수**: 실제 호스트에서 6종 조회·표시, 없음/연결안됨 상태, 30초 갱신 확인 → Phase 4 진행 승인
 
 ## Phase 4 — UI (위젯 UI·윈도우) · `UI_SPEC.md`
