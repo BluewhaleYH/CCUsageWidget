@@ -9,6 +9,22 @@ import {
   summarizeStatus
 } from './setup'
 import type { CommandRunner, DependencyName, InstallOutcome, SetupReport } from './setup'
+import {
+  buildSshConfig,
+  credentials,
+  deleteHost,
+  editHost,
+  registerHost,
+  repository,
+  selectHost,
+  switchHost,
+  testConnection,
+  type ConnectionInput,
+  type HostEntry,
+  type RegisterHostInput,
+  type SwitchDirection
+} from './hosts'
+import { SshCommandRunner } from './ssh/runner'
 
 type GetWindow = () => BrowserWindow | null
 
@@ -17,28 +33,35 @@ interface NotImplemented {
   error: string
 }
 
-/** Phase 2~3에서 구현될 채널의 임시 응답 */
+/** Phase 3에서 구현될 채널의 임시 응답 */
 function notImplemented(channel: string): NotImplemented {
   return { ok: false, error: `${channel} not implemented (Phase 0 skeleton)` }
 }
 
-/**
- * 호스트별 명령 러너를 만든다 (seam).
- * - Phase 1: 로컬 러너로 동작/검증.
- * - Phase 2: hostId로 SSH 연결 정보를 찾아 `SshCommandRunner`를 반환하도록 교체한다.
- */
-function createRunnerForHost(_hostId: string): CommandRunner {
-  return new LocalCommandRunner()
-}
-
-/** Phase 1에서 hostId 미지정 시 사용하는 로컬 점검 키 */
+/** hostId 미지정 시 사용하는 로컬 점검 키 (Phase 1) */
 const DEFAULT_HOST_ID = 'local'
 
 /**
+ * 호스트별 명령 러너를 만든다 (seam).
+ * - hostId가 'local'이거나 호스트를 찾을 수 없으면 로컬 러너(진단·폴백).
+ * - 등록된 호스트면 복호화한 자격증명으로 `SshCommandRunner`를 만들어 **원격** 실행.
+ *   ⇒ Phase 1의 setup:* 점검/설치가 이 한 곳으로 원격에서 동작한다.
+ */
+function createRunnerForHost(hostId: string): CommandRunner {
+  if (hostId === DEFAULT_HOST_ID) return new LocalCommandRunner()
+  const host = repository.getHost(hostId)
+  if (!host) return new LocalCommandRunner()
+  const secret = credentials.getSecret(hostId)
+  const config = buildSshConfig(host, secret)
+  return new SshCommandRunner(config)
+}
+
+/**
  * IPC 채널 등록.
- * - widget:* — 창 제어(실제 동작).
- * - setup:*  — 의존성 점검/설치 (SETUP_SPEC, Phase 1).
- * - usage:* / host:* — DATA_SPEC / CONNECTION_SPEC 단계에서 구현(stub).
+ * - widget:* — 창 제어.
+ * - setup:*  — 의존성 점검/설치 (Phase 1).
+ * - host:*   — 호스트 관리 (Phase 2).
+ * - usage:*  — DATA_SPEC (Phase 3, stub).
  */
 export function registerIpc(_getWindow: GetWindow): void {
   // --- widget 제어 ---
@@ -56,23 +79,21 @@ export function registerIpc(_getWindow: GetWindow): void {
   })
 
   // --- setup (SETUP_SPEC, Phase 1) ---
-  // 점검만 수행 — 어떤 설치 명령도 실행하지 않는다(동의 게이트는 setup:install).
   ipcMain.handle('setup:check', async (_e, args?: { hostId?: string }) => {
     const hostId = args?.hostId ?? DEFAULT_HOST_ID
     const runner = createRunnerForHost(hostId)
     const report = await runSetupCheck(runner, new Date().toISOString())
     saveReport(hostId, report)
+    disposeRunner(runner)
     return { report, status: summarizeStatus(report), plan: buildInstallPlan(report) }
   })
 
-  // 사용자 동의(y) 이후에만 호출되는 채널. names = 설치에 동의한 의존성 목록.
   ipcMain.handle(
     'setup:install',
     async (_e, args?: { hostId?: string; names?: DependencyName[] }) => {
       const hostId = args?.hostId ?? DEFAULT_HOST_ID
       const runner = createRunnerForHost(hostId)
 
-      // 최신 점검을 기준으로 설치 계획 산출(캐시 없으면 새로 점검)
       let report: SetupReport | undefined = getReport(hostId)
       if (!report) {
         report = await runSetupCheck(runner, new Date().toISOString())
@@ -83,12 +104,11 @@ export function registerIpc(_getWindow: GetWindow): void {
       const requested = args?.names
       const plan = requested ? fullPlan.filter((p) => requested.includes(p.name)) : fullPlan
 
-      // setup:install 호출 자체가 동의를 의미하므로, 요청된 항목은 confirm=true.
       const outcomes: InstallOutcome[] = await applyInstallPlan(runner, plan, () => true)
 
-      // 설치 후 재점검하여 캐시 갱신
       const updated = await runSetupCheck(runner, new Date().toISOString())
       saveReport(hostId, updated)
+      disposeRunner(runner)
 
       return { outcomes, report: updated, status: summarizeStatus(updated) }
     }
@@ -101,13 +121,63 @@ export function registerIpc(_getWindow: GetWindow): void {
     return { report, status: summarizeStatus(report) }
   })
 
+  // --- host (CONNECTION_SPEC, Phase 2) ---
+  // host:list 는 비밀을 포함하지 않는다(HostEntry에 비밀 미포함).
+  ipcMain.handle('host:list', () => ({
+    hosts: repository.listHosts(),
+    selectedHostId: repository.getSelectedHostId() ?? null
+  }))
+
+  ipcMain.handle(
+    'host:add',
+    async (_e, args: { input: RegisterHostInput; secret?: string }) =>
+      registerHost(args.input, args.secret)
+  )
+
+  ipcMain.handle(
+    'host:test',
+    async (_e, args: { input: ConnectionInput; secret?: string }) => {
+      const config = buildSshConfig(args.input, args.secret)
+      return testConnection(config)
+    }
+  )
+
+  // direction: 'prev'|'next' 순환, 또는 { id } 직접 선택
+  ipcMain.handle(
+    'host:switch',
+    (_e, args: SwitchDirection | { id: string }): HostEntry | undefined => {
+      if (typeof args === 'string') return switchHost(args)
+      return selectHost(args.id)
+    }
+  )
+
+  ipcMain.handle(
+    'host:update',
+    (
+      _e,
+      args: { id: string; patch: Partial<Omit<HostEntry, 'id'>>; secret?: string }
+    ): HostEntry | undefined => editHost(args.id, args.patch, args.secret)
+  )
+
+  ipcMain.handle('host:remove', (_e, args: { id: string }) => deleteHost(args.id))
+
+  // host:status 는 푸시 채널(메인→렌더러). 실제 푸시는 Phase 3의 30초 폴링에서 sendHostStatus로 수행.
+
   // --- usage (DATA_SPEC, Phase 3) ---
   ipcMain.handle('usage:refresh', () => notImplemented('usage:refresh'))
+}
 
-  // --- host (CONNECTION_SPEC, Phase 2) ---
-  ipcMain.handle('host:list', () => notImplemented('host:list'))
-  ipcMain.handle('host:add', () => notImplemented('host:add'))
-  ipcMain.handle('host:test', () => notImplemented('host:test'))
-  ipcMain.handle('host:switch', () => notImplemented('host:switch'))
-  ipcMain.handle('host:remove', () => notImplemented('host:remove'))
+/** SshCommandRunner면 연결을 닫는다(LocalCommandRunner는 무시). */
+function disposeRunner(runner: CommandRunner): void {
+  if (runner instanceof SshCommandRunner) runner.dispose()
+}
+
+/**
+ * 호스트 연결 상태를 렌더러로 푸시한다. (CONNECTION_SPEC §3.6 — Phase 3 폴링에서 호출)
+ */
+export function sendHostStatus(
+  win: BrowserWindow | null,
+  status: { id: string; lastStatus: HostEntry['lastStatus']; lastCheckedAt: string }
+): void {
+  win?.webContents.send('host:status', status)
 }
