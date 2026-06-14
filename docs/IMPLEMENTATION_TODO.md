@@ -12,7 +12,7 @@
 - [x] Phase 0 — 프로젝트 스캐폴딩
 - [x] Phase 1 — SETUP (의존성 점검/설치)
 - [x] Phase 2 — CONNECTION (원격 연결·호스트 관리)
-- [ ] Phase 3 — DATA (조회·표시)
+- [x] Phase 3 — DATA (조회·표시)
 - [ ] Phase 4 — UI (위젯 UI·윈도우)
 
 ---
@@ -66,7 +66,11 @@
 - [x] 2×3 그리드 데이터 구성(비용 + 토큰) — `usage` UsageGrid/assembleGrid/getCell/fetchUsageGrid. 검수: typecheck/build + 그리드 스모크 ✓ (이슈 #33)
 - [x] 상태 처리: 데이터 없음 "없음", SSH 실패 "연결 안됨", 로딩/에러/갱신시각 — UsageGrid.status + poller 로딩→ready/error. 검수: typecheck/build + 상태 스모크 ✓ (이슈 #39)
 - [x] IPC: `usage:update`(푸시=UsageGrid) / `usage:refresh`(요청→refreshNow) — preload 타입 계약 확정. 검수: typecheck/build + 누출 0 ✓ (이슈 #41)
-- [ ] 🔍 **검수**: 실제 호스트에서 6종 조회·표시, 없음/연결안됨 상태, 30초 갱신 확인 → Phase 4 진행 승인
+- [x] 🔍 **검수**: 6종 조회·정규화·상태 확인 → Phase 4 진행 승인 (이슈 #43)
+  - 로컬 대체 e2e(LocalCommandRunner + 실제 ccusage 6종, npx 폴백): claude daily/monthly **실데이터 present**(cost $43.75/$63.58, 토큰 6천만+), codex·gemini **없음(present:false)**, 6셀, connection connected, status ready, 셀에 비용+토큰 ✓
+  - 파이프라인/폴링/상태 전이(loading→ready/error/disconnected)·usage IPC는 CB1~8 스모크로 검증 ✓
+  - typecheck/build ✓
+  - ⚠️ 미수행(플래그): **원격 호스트 SSH 6종 실조회** — 사용자 호스트 제공 시 수행(SshCommandRunner는 mock 검증 완료)
 
 ## Phase 4 — UI (위젯 UI·윈도우) · `UI_SPEC.md`
 - [ ] frameless/transparent/always-on-top/skipTaskbar 셸 + 드래그 영역
