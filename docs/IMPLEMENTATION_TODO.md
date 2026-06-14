@@ -77,7 +77,7 @@
 - [ ] 컨트롤 헤더바: ✕ 종료 / ─ 최소화(접기) / □ 최대화(상세 확장)
 - [ ] 최소화=접기(헤더만), 최대화=상세 확장 동작 + 상태 영속화
 - [ ] + 버튼 IP 등록 폼/모달(CONNECTION 로직 연동)
-- [ ] ◀▶ 버튼 호스트 전환 + 현재 별칭 표시(+ 호스트 없음 안내)
+- [x] ◀▶ 버튼 호스트 전환 + 현재 별칭 표시(+ 호스트 없음 안내) — lib/host + App host.list/switch/onStatus. 검수: typecheck/build + host 스모크 ✓ (이슈 #51)
 - [x] 데이터 영역(2×3) 렌더링 + 상태 표시(로딩/에러/연결안됨/갱신시각) — UsageGrid/StatusBar + lib/grid, usage.onUpdate 구독. 검수: typecheck/build + grid 스모크 ✓ (이슈 #49)
 - [ ] 전체 레이아웃·크기·반응형
 - [ ] preload 화이트리스트 API만 사용 확인
