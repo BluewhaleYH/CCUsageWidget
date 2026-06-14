@@ -9,7 +9,7 @@
 - 구현 중 SPEC과 어긋나는 점을 발견하면 SPEC을 먼저 갱신한 뒤 진행합니다.
 
 ## 진행 상태 요약
-- [ ] Phase 0 — 프로젝트 스캐폴딩
+- [x] Phase 0 — 프로젝트 스캐폴딩
 - [ ] Phase 1 — SETUP (의존성 점검/설치)
 - [ ] Phase 2 — CONNECTION (원격 연결·호스트 관리)
 - [ ] Phase 3 — DATA (조회·표시)
@@ -18,14 +18,16 @@
 ---
 
 ## Phase 0 — 프로젝트 스캐폴딩
-- [ ] electron-vite + React 18 + TypeScript(strict) 프로젝트 초기화
-- [ ] `src/main`, `src/preload`, `src/renderer` 기본 골격 생성
-- [ ] 보안 설정 적용: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`
-- [ ] `electron-store` 설정(설정·호스트 목록 저장소)
-- [ ] preload `contextBridge` 기본 골격 + IPC 라우팅 골격
-- [ ] `electron-builder` 패키징 설정(mac/win/linux) 초안
-- [ ] `npm run dev`로 빈 위젯 창이 정상 표시되는지 확인
-- [ ] 🔍 **검수**: 빌드/실행 성공, 보안 설정 확인, 디렉토리 구조가 CLAUDE.md와 일치 → Phase 1 진행 승인
+- [x] electron-vite + React 18 + TypeScript(strict) 프로젝트 초기화
+- [x] `src/main`, `src/preload`, `src/renderer` 기본 골격 생성
+- [x] 보안 설정 적용: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`
+- [x] `electron-store` 설정(설정·호스트 목록 저장소)
+- [x] preload `contextBridge` 기본 골격 + IPC 라우팅 골격
+- [x] `electron-builder` 패키징 설정(mac/win/linux) 초안
+- [x] `npm run dev`로 빈 위젯 창이 정상 표시되는지 확인
+- [x] 🔍 **검수**: 빌드/실행 성공, 보안 설정 확인, 디렉토리 구조가 CLAUDE.md와 일치 → Phase 1 진행 승인
+  - 검증: `npm run build` ✓, `npm run typecheck` ✓, `npm run dev` → Electron 창 정상 기동 ✓
+  - 비고: electron 바이너리 postinstall이 환경 제약으로 자동 완료되지 않아 수동 보정함(아래 "환경 메모" 참조)
 
 ## Phase 1 — SETUP (의존성 점검/설치) · `SETUP_SPEC.md`
 - [ ] 원격 호스트 대상 node/npm/ccusage 점검 로직(`command -v`, 버전)
@@ -77,3 +79,18 @@
 - [ ] 4개 SPEC 완료 기준 전수 교차 확인
 - [ ] mac/win/linux 크로스플랫폼 동작 점검(로컬 표시 + 원격 OS 조회)
 - [ ] 패키징 빌드 산출물 확인
+
+---
+
+## 환경 메모 (Environment Notes)
+- **개발 머신 사전 요구사항**: Node.js(Homebrew로 설치, `brew install node`), npm.
+- **electron 바이너리 postinstall 이슈**: 자동화/제약 환경에서 `electron`의 postinstall
+  (`node install.js`)이 `node_modules/electron/dist`에 바이너리를 완전히 풀지 못해
+  `path.txt`/`dist/version`이 비는 경우가 있었음. 증상: `electron-vite dev` 시 `Electron uninstall`.
+  - 다운로드·zip 자체는 정상(`~/Library/Caches/electron/...`). 추출/쓰기 단계만 실패.
+  - **복구법**: 캐시 zip을 `node_modules/electron/dist`에 풀고
+    `node_modules/electron/path.txt`에 `Electron.app/Contents/MacOS/Electron`(mac 기준) 기록.
+    또는 일반 터미널에서 `rm -rf node_modules/electron && npm install electron` 재설치.
+  - 검증: `node -e "console.log(require('electron'))"`가 바이너리 경로를 출력하면 정상.
+- **npm allow-scripts**: 이 환경은 install script 승인제. `package.json`의 `allowScripts`에
+  `electron`, `esbuild` 승인 등록됨.
