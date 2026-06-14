@@ -60,7 +60,7 @@
 ## Phase 3 — DATA (조회·표시) · `DATA_SPEC.md`
 - [x] ccusage 호출 명령 빌더 + 단일 호출(npx 폴백) — `usage/commands.ts`+`run.ts`. 검수: typecheck/build + 실제 로컬 npx 폴백 호출 ✓ (이슈 #27) · (6종 묶음은 다음 항목)
 - [ ] 6종 호출 묶음 처리(병렬/세션 재사용) + 개별 성공·실패 처리
-- [ ] 방어적 JSON 파싱 → 공통 `UsageCell` 모델 정규화
+- [x] 방어적 JSON 파싱 → 공통 `UsageCell` 모델 정규화 — `usage/parse.ts`(period/data·totalCost/costUSD 변형 흡수, 최근 항목, 빈값/malformed 안전). 검수: 실제 JSON+변형 스모크 ✓ (이슈 #29)
 - [ ] 30초 폴링(현재 호스트), 호스트 전환 시 즉시 갱신, `usage:refresh` 수동 갱신
 - [ ] 폴링 사이클에 연결 상태(`lastStatus`) 갱신 통합
 - [ ] 2×3 그리드 데이터 구성(비용 + 토큰)
