@@ -3,7 +3,7 @@ import { Header } from './components/Header'
 import { HostFormModal } from './components/HostFormModal'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
-import { canSwitch, currentAlias } from './lib/host'
+import { canSwitch, connDot, currentAlias } from './lib/host'
 import { toggleCollapse, toggleExpand, type View } from './lib/view'
 import type { HostEntry, HostListResult, HostStatusUpdate, UsageGrid as Grid } from './lib/types'
 
@@ -58,6 +58,8 @@ function App() {
       <Header
         alias={currentAlias(hosts, selectedHostId)}
         canSwitch={canSwitch(hosts)}
+        conn={connDot(grid)}
+        view={view}
         onPrev={() => void switchHost('prev')}
         onNext={() => void switchHost('next')}
         onAdd={() => setModalOpen(true)}

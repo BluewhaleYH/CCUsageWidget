@@ -80,6 +80,27 @@ body {
   background: rgba(255, 255, 255, 0.16);
 }
 
+.controls button.active {
+  background: rgba(90, 140, 240, 0.4);
+}
+
+/* 연결 점 (접힌 상태에서도 표시) */
+.conn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.conn-dot.on {
+  background: #67d28a;
+}
+
+.conn-dot.off {
+  background: #e07a7a;
+}
+
 .controls {
   display: flex;
   gap: 4px;
