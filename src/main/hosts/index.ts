@@ -77,3 +77,43 @@ export async function registerHost(
 
   return { ok: true, host: saved }
 }
+
+/** 전환 방향 또는 직접 선택할 호스트 id */
+export type SwitchDirection = 'prev' | 'next'
+
+/**
+ * 특정 호스트를 직접 선택한다. 존재하지 않는 id면 무시하고 현재 선택 반환.
+ */
+export function selectHost(id: string): HostEntry | undefined {
+  if (repository.getHost(id)) repository.setSelectedHostId(id)
+  return repository.getSelectedHost()
+}
+
+/**
+ * 등록된 호스트를 좌/우로 순환 전환한다. (CONNECTION_SPEC §3.5)
+ * - 빈 목록: 선택 해제 후 undefined.
+ * - 미선택 상태: next→첫 항목, prev→마지막 항목.
+ * - 양 끝에서 순환.
+ * 선택 상태는 저장되어 재시작 시 복원된다.
+ */
+export function switchHost(direction: SwitchDirection): HostEntry | undefined {
+  const ids = repository.listHosts().map((h) => h.id)
+  if (ids.length === 0) {
+    repository.setSelectedHostId(undefined)
+    return undefined
+  }
+
+  const current = repository.getSelectedHostId()
+  const idx = current ? ids.indexOf(current) : -1
+  const len = ids.length
+
+  let target: number
+  if (idx === -1) {
+    target = direction === 'next' ? 0 : len - 1
+  } else {
+    target = direction === 'next' ? (idx + 1) % len : (idx - 1 + len) % len
+  }
+
+  repository.setSelectedHostId(ids[target])
+  return repository.getSelectedHost()
+}
