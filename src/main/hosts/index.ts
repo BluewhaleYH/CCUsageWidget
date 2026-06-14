@@ -117,3 +117,53 @@ export function switchHost(direction: SwitchDirection): HostEntry | undefined {
   repository.setSelectedHostId(ids[target])
   return repository.getSelectedHost()
 }
+
+/**
+ * 호스트 항목을 수정한다. (CONNECTION_SPEC §3.7)
+ * `secret`이 주어지면 자격증명도 갱신한다(빈 문자열이면 갱신하지 않음).
+ * 존재하지 않으면 undefined.
+ */
+export function editHost(
+  id: string,
+  patch: Partial<Omit<HostEntry, 'id'>>,
+  secret?: string
+): HostEntry | undefined {
+  const updated = repository.updateHost(id, patch)
+  if (!updated) return undefined
+  if (secret) credentials.saveSecret(id, secret)
+  return updated
+}
+
+export interface DeleteHostResult {
+  removed: boolean
+  /** 삭제 후 현재 선택된 호스트 id (없으면 undefined) */
+  selectedHostId?: string
+}
+
+/**
+ * 호스트를 삭제한다. (CONNECTION_SPEC §3.7)
+ * 자격증명도 함께 제거하고, 현재 선택이었다면 다음 항목(없으면 빈 상태)으로 전환한다.
+ */
+export function deleteHost(id: string): DeleteHostResult {
+  const hosts = repository.listHosts()
+  const idx = hosts.findIndex((h) => h.id === id)
+  if (idx === -1) {
+    return { removed: false, selectedHostId: repository.getSelectedHostId() }
+  }
+
+  const wasSelected = repository.getSelectedHostId() === id
+  repository.removeHost(id)
+  credentials.deleteSecret(id)
+
+  if (wasSelected) {
+    const rest = repository.listHosts()
+    if (rest.length === 0) {
+      repository.setSelectedHostId(undefined)
+    } else {
+      // 삭제된 위치를 메우는 항목(다음 항목)을 선택, 끝이었으면 마지막으로 클램프
+      repository.setSelectedHostId(rest[Math.min(idx, rest.length - 1)].id)
+    }
+  }
+
+  return { removed: true, selectedHostId: repository.getSelectedHostId() }
+}
