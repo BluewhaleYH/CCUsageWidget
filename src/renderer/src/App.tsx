@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Header } from './components/Header'
+import { HostFormModal } from './components/HostFormModal'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
 import { canSwitch, currentAlias } from './lib/host'
@@ -15,6 +16,7 @@ function App() {
   const [grid, setGrid] = useState<Grid | null>(null)
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const loadHosts = useCallback(async () => {
     const res = (await window.api.host.list()) as HostListResult
@@ -58,7 +60,7 @@ function App() {
         canSwitch={canSwitch(hosts)}
         onPrev={() => void switchHost('prev')}
         onNext={() => void switchHost('next')}
-        onAdd={() => {}}
+        onAdd={() => setModalOpen(true)}
         onMinimize={() => setView(toggleCollapse)}
         onMaximize={() => setView(toggleExpand)}
         onClose={() => window.api.widget.close()}
@@ -71,6 +73,16 @@ function App() {
           </main>
           <StatusBar grid={grid} />
         </>
+      )}
+
+      {modalOpen && (
+        <HostFormModal
+          onClose={() => setModalOpen(false)}
+          onRegistered={() => {
+            void loadHosts()
+            void window.api.usage.refresh()
+          }}
+        />
       )}
     </div>
   )
