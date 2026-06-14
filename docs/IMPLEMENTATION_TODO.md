@@ -11,7 +11,7 @@
 ## 진행 상태 요약
 - [x] Phase 0 — 프로젝트 스캐폴딩
 - [x] Phase 1 — SETUP (의존성 점검/설치)
-- [ ] Phase 2 — CONNECTION (원격 연결·호스트 관리)
+- [x] Phase 2 — CONNECTION (원격 연결·호스트 관리)
 - [ ] Phase 3 — DATA (조회·표시)
 - [ ] Phase 4 — UI (위젯 UI·윈도우)
 
@@ -51,7 +51,11 @@
 - [x] IP 전환(좌/우 순환) + 현재 선택 상태 영속화 — `hosts/index.ts switchHost/selectHost`. 검수: typecheck/build + 순환 스모크 ✓ (이슈 #17)
 - [x] 항목 수정/삭제 — `hosts/index.ts editHost/deleteHost`(삭제 시 자격증명 제거+선택 전환). 검수: typecheck/build + mock 스모크 ✓ (이슈 #19)
 - [x] IPC: `host:add/list/test/switch/update/remove` + `host:status` 푸시 — `ipc.ts` 실제 핸들러 + createRunnerForHost SSH 교체, preload host.update/onStatus. 검수: typecheck/build ✓ (이슈 #21)
-- [ ] 🔍 **검수**: 키/비밀번호 인증 연결, 등록/전환/별칭 동작, 자격증명 평문 미저장 확인 → Phase 3 진행 승인
+- [x] 🔍 **검수**: 키/비밀번호 인증 연결, 등록/전환/별칭 동작, 자격증명 평문 미저장 확인 → Phase 3 진행 승인 (이슈 #23)
+  - 통합 스모크(mock ssh2/electron): 키·비밀번호 등록→OS 감지→별칭→list→전환 순환→수정→삭제(자격증명 제거) + **store 전체 평문 비밀 부재** ✓
+  - 실제 Electron `safeStorage` 라운드트립(이 환경): isEncryptionAvailable=true, 복호 일치, 암호문에 평문 부재 ✓
+  - typecheck/build ✓
+  - ⚠️ 미수행(플래그): **실제 원격 호스트로의 SSH 핸드셰이크**(키/비밀번호) — 사용자 호스트 제공 시 수행. ssh2 래퍼/연결테스트 로직은 mock 검증 완료.
 
 ## Phase 3 — DATA (조회·표시) · `DATA_SPEC.md`
 - [ ] 선택 호스트에서 SSH로 ccusage 6종 호출(daily/monthly × claude/codex/gemini)
