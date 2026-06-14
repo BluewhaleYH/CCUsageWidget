@@ -58,7 +58,7 @@
   - ⚠️ 미수행(플래그): **실제 원격 호스트로의 SSH 핸드셰이크**(키/비밀번호) — 사용자 호스트 제공 시 수행. ssh2 래퍼/연결테스트 로직은 mock 검증 완료.
 
 ## Phase 3 — DATA (조회·표시) · `DATA_SPEC.md`
-- [ ] 선택 호스트에서 SSH로 ccusage 6종 호출(daily/monthly × claude/codex/gemini)
+- [x] ccusage 호출 명령 빌더 + 단일 호출(npx 폴백) — `usage/commands.ts`+`run.ts`. 검수: typecheck/build + 실제 로컬 npx 폴백 호출 ✓ (이슈 #27) · (6종 묶음은 다음 항목)
 - [ ] 6종 호출 묶음 처리(병렬/세션 재사용) + 개별 성공·실패 처리
 - [ ] 방어적 JSON 파싱 → 공통 `UsageCell` 모델 정규화
 - [ ] 30초 폴링(현재 호스트), 호스트 전환 시 즉시 갱신, `usage:refresh` 수동 갱신
