@@ -18,10 +18,10 @@ export const COLLAPSED_HEIGHT = 40
 /** 펼침 높이 — 일일/월간 데이터가 잘 보이는 고정 높이 */
 export const SHOWN_HEIGHT = 640
 
-/** 창 너비 제약 / 기본값 (이전 대비 2배) */
-export const MIN_WIDTH = 640
+/** 창 너비 제약 / 기본값 */
+export const MIN_WIDTH = 960
 export const MAX_WIDTH = 1280
-export const DEFAULT_WIDTH = 760
+export const DEFAULT_WIDTH = 1000
 
 /**
  * 영속 저장 스키마 (Phase 0 기본 + Phase 1 setup + Phase 2 hosts).
