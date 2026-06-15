@@ -10,17 +10,18 @@ export interface WindowBounds {
   height: number
 }
 
-/** 위젯 뷰 상태 (UI_SPEC §3.4~3.5) */
-export type WidgetView = 'collapsed' | 'normal' | 'expanded'
+/** 위젯 뷰 상태 (UI_SPEC §3.4~3.5) — 접힘(헤더만) / 펼침 2단계 */
+export type WidgetView = 'collapsed' | 'normal'
 
-/** 뷰별 창 높이 프리셋(px) */
-export const VIEW_HEIGHTS = {
-  collapsed: 40,
-  expanded: 480
-} as const
+/** 접힘(헤더만) 높이 */
+export const COLLAPSED_HEIGHT = 40
+/** 펼침 높이 — 일일/월간 데이터가 잘 보이는 고정 높이 */
+export const SHOWN_HEIGHT = 640
 
-/** 기본 normal 높이 */
-export const DEFAULT_NORMAL_HEIGHT = 280
+/** 창 너비 제약 / 기본값 */
+export const MIN_WIDTH = 320
+export const MAX_WIDTH = 640
+export const DEFAULT_WIDTH = 380
 
 /**
  * 영속 저장 스키마 (Phase 0 기본 + Phase 1 setup + Phase 2 hosts).
@@ -50,9 +51,12 @@ export const store = new Store<StoreSchema>({
   defaults: {}
 })
 
-/** 뷰 + normal 높이로부터 실제 창 높이를 구한다. */
-export function viewHeight(view: WidgetView, normalHeight: number): number {
-  if (view === 'collapsed') return VIEW_HEIGHTS.collapsed
-  if (view === 'expanded') return VIEW_HEIGHTS.expanded
-  return normalHeight
+/** 뷰별 창 높이. (collapsed=헤더만, normal=데이터 표시 고정 높이) */
+export function viewHeight(view: WidgetView): number {
+  return view === 'collapsed' ? COLLAPSED_HEIGHT : SHOWN_HEIGHT
+}
+
+/** 너비를 [MIN_WIDTH, MAX_WIDTH]로 클램프 */
+export function clampWidth(w: number): number {
+  return Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.round(w)))
 }

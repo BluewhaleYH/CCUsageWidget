@@ -4,7 +4,15 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { fixGuiPath } from './shellPath'
-import { DEFAULT_NORMAL_HEIGHT, store, viewHeight } from './store'
+import {
+  clampWidth,
+  COLLAPSED_HEIGHT,
+  DEFAULT_WIDTH,
+  MAX_WIDTH,
+  MIN_WIDTH,
+  store,
+  viewHeight
+} from './store'
 import { usagePoller } from './usage/poller'
 
 let mainWindow: BrowserWindow | null = null
@@ -12,15 +20,15 @@ let mainWindow: BrowserWindow | null = null
 function createWindow(): void {
   const bounds = store.get('windowBounds')
   const view = store.get('view') ?? 'normal'
-  const normalHeight = bounds?.height ?? DEFAULT_NORMAL_HEIGHT
 
   mainWindow = new BrowserWindow({
-    width: bounds?.width ?? 360,
-    height: viewHeight(view, normalHeight),
+    width: clampWidth(bounds?.width ?? DEFAULT_WIDTH),
+    height: viewHeight(view),
     x: bounds?.x,
     y: bounds?.y,
-    minWidth: 280,
-    minHeight: 36,
+    minWidth: MIN_WIDTH,
+    maxWidth: MAX_WIDTH,
+    minHeight: COLLAPSED_HEIGHT,
     show: false,
     // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김
     frame: false,
@@ -42,19 +50,8 @@ function createWindow(): void {
   mainWindow.on('close', () => {
     if (!mainWindow) return
     const b = mainWindow.getBounds()
-    const view = store.get('view') ?? 'normal'
-    // normal 뷰일 때만 높이까지 저장. 접힘/확장 중엔 normal 높이를 보존한다.
-    if (view === 'normal') {
-      store.set('windowBounds', b)
-    } else {
-      const prev = store.get('windowBounds')
-      store.set('windowBounds', {
-        x: b.x,
-        y: b.y,
-        width: b.width,
-        height: prev?.height ?? DEFAULT_NORMAL_HEIGHT
-      })
-    }
+    // 위치·너비만 저장(높이는 뷰로 결정). 너비는 제약 범위로 클램프.
+    store.set('windowBounds', { x: b.x, y: b.y, width: clampWidth(b.width), height: b.height })
   })
 
   // 외부 링크는 기본 브라우저로

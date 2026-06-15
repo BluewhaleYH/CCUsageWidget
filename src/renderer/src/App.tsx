@@ -5,7 +5,7 @@ import { SetupPanel } from './components/SetupPanel'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
 import { canSwitch, connDot, currentAlias } from './lib/host'
-import { toggleCollapse, toggleExpand, type View } from './lib/view'
+import { maximize, toggleCollapse, type View } from './lib/view'
 import type {
   HostEntry,
   HostListResult,
@@ -99,7 +99,7 @@ function App() {
         onNext={() => void switchHost('next')}
         onAdd={() => setModalOpen(true)}
         onMinimize={() => applyView(toggleCollapse(view))}
-        onMaximize={() => applyView(toggleExpand(view))}
+        onMaximize={() => applyView(maximize())}
         onClose={() => window.api.widget.close()}
       />
 
