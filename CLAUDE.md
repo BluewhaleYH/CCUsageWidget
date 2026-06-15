@@ -203,7 +203,7 @@ docs/          # 기능 명세: SETUP_SPEC / CONNECTION_SPEC / DATA_SPEC / UI_SP
 - **IPC 채널 네이밍**: `<도메인>:<액션>` 형식. 예) `usage:update`, `usage:refresh`,
   `host:add`, `host:list`, `host:test`, `host:switch`, `host:remove`, `host:status`,
   `setup:check`, `setup:install`, `setup:status`,
-  `widget:minimize`, `widget:maximize`, `widget:close`.
+  `widget:setView`, `widget:getView`, `widget:close`.
 - **SSH·ccusage 접근은 무조건 main 프로세스 경유.** 렌더러/preload에서 직접 실행 금지.
 - **자격증명은 평문 저장 금지** — 보안 저장소/`safeStorage` 사용. store에는 비민감 메타만.
 - **새 IPC는 preload 화이트리스트에만 추가.** 그 외 경로로 Node 기능을 노출하지 않음.

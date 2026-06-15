@@ -183,6 +183,13 @@ body {
   opacity: 0.6;
 }
 
+.cell .io {
+  font-size: 9px;
+  font-style: normal;
+  opacity: 0.5;
+  margin-top: 1px;
+}
+
 .cell.none {
   font-size: 11px;
   opacity: 0.35;

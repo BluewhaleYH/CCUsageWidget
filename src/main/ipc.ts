@@ -23,28 +23,39 @@ import {
   type SwitchDirection
 } from './hosts'
 import { createRunnerForHost, DEFAULT_HOST_ID, disposeRunner } from './runnerFactory'
+import { DEFAULT_NORMAL_HEIGHT, store, viewHeight, type WidgetView } from './store'
 import { usagePoller } from './usage/poller'
 
 type GetWindow = () => BrowserWindow | null
 
 /**
  * IPC 채널 등록.
- * - widget:* — 창 제어.
+ * - widget:* — 창 제어(접기/확장/종료).
  * - setup:*  — 의존성 점검/설치 (Phase 1).
  * - host:*   — 호스트 관리 (Phase 2).
- * - usage:*  — DATA_SPEC (Phase 3, stub).
+ * - usage:*  — 데이터 조회 (Phase 3).
  */
 export function registerIpc(_getWindow: GetWindow): void {
-  // --- widget 제어 ---
-  ipcMain.handle('widget:minimize', (e) => {
-    BrowserWindow.fromWebContents(e.sender)?.minimize()
-  })
-  ipcMain.handle('widget:maximize', (e) => {
+  // --- widget 제어 (UI_SPEC §3.4~3.5) ---
+  // 접기/확장: 프리셋 높이로 리사이즈 + view 영속화. normal 높이는 windowBounds에 보존.
+  ipcMain.handle('widget:setView', (e, view: WidgetView) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
-    if (win.isMaximized()) win.unmaximize()
-    else win.maximize()
+    const b = win.getBounds()
+    const prev = store.get('windowBounds')
+    const current = store.get('view') ?? 'normal'
+
+    // normal에서 벗어나기 전, 현재(수동 리사이즈 포함) 높이를 normal로 캡처
+    if (current === 'normal') {
+      store.set('windowBounds', { x: b.x, y: b.y, width: b.width, height: b.height })
+    }
+    const normalHeight =
+      current === 'normal' ? b.height : (prev?.height ?? DEFAULT_NORMAL_HEIGHT)
+
+    win.setBounds({ x: b.x, y: b.y, width: b.width, height: viewHeight(view, normalHeight) })
+    store.set('view', view)
   })
+  ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')
   ipcMain.handle('widget:close', (e) => {
     BrowserWindow.fromWebContents(e.sender)?.close()
   })
