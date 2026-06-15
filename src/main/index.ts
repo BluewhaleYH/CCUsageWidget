@@ -4,15 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { fixGuiPath } from './shellPath'
-import {
-  clampWidth,
-  COLLAPSED_HEIGHT,
-  DEFAULT_WIDTH,
-  MAX_WIDTH,
-  MIN_WIDTH,
-  store,
-  viewHeight
-} from './store'
+import { clampWidth, DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH, store, viewHeight } from './store'
 import { usagePoller } from './usage/poller'
 
 let mainWindow: BrowserWindow | null = null
@@ -20,15 +12,18 @@ let mainWindow: BrowserWindow | null = null
 function createWindow(): void {
   const bounds = store.get('windowBounds')
   const view = store.get('view') ?? 'normal'
+  const height = viewHeight(view)
 
   mainWindow = new BrowserWindow({
     width: clampWidth(bounds?.width ?? DEFAULT_WIDTH),
-    height: viewHeight(view),
+    height,
     x: bounds?.x,
     y: bounds?.y,
     minWidth: MIN_WIDTH,
     maxWidth: MAX_WIDTH,
-    minHeight: COLLAPSED_HEIGHT,
+    // 높이는 뷰로만 결정 — 사용자 드래그로 조정 불가하도록 현재 뷰 높이에 고정(min=max).
+    minHeight: height,
+    maxHeight: height,
     show: false,
     // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김
     frame: false,

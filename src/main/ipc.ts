@@ -23,7 +23,15 @@ import {
   type SwitchDirection
 } from './hosts'
 import { createRunnerForHost, DEFAULT_HOST_ID, disposeRunner } from './runnerFactory'
-import { store, viewHeight, type WidgetView } from './store'
+import {
+  COLLAPSED_HEIGHT,
+  MAX_WIDTH,
+  MIN_WIDTH,
+  SHOWN_HEIGHT,
+  store,
+  viewHeight,
+  type WidgetView
+} from './store'
 import { usagePoller } from './usage/poller'
 
 type GetWindow = () => BrowserWindow | null
@@ -41,8 +49,14 @@ export function registerIpc(_getWindow: GetWindow): void {
   ipcMain.handle('widget:setView', (e, view: WidgetView) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
+    const h = viewHeight(view)
     const b = win.getBounds()
-    win.setBounds({ x: b.x, y: b.y, width: b.width, height: viewHeight(view) })
+    // 높이 고정 제약을 잠시 풀고 리사이즈 후 새 뷰 높이에 다시 고정(드래그 불가, 너비만 조정).
+    win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
+    win.setMaximumSize(MAX_WIDTH, SHOWN_HEIGHT)
+    win.setBounds({ x: b.x, y: b.y, width: b.width, height: h })
+    win.setMinimumSize(MIN_WIDTH, h)
+    win.setMaximumSize(MAX_WIDTH, h)
     store.set('view', view)
   })
   ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')
