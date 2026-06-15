@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Header } from './components/Header'
 import { HostFormModal } from './components/HostFormModal'
 import { SetupPanel } from './components/SetupPanel'
@@ -26,6 +26,7 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [setupStatus, setSetupStatus] = useState<HostSetupStatus>('unknown')
   const [setupOpen, setSetupOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   const loadHosts = useCallback(async () => {
     const res = (await window.api.host.list()) as HostListResult
@@ -50,6 +51,28 @@ function App() {
     setView(next)
     void window.api.widget.setView(next)
   }, [])
+
+  // 콘텐츠 높이를 측정해 창 높이를 맞춤(펼침 상태, 하단 빈 공간 제거).
+  // 헤더 + 데이터(스크롤 콘텐츠) + 푸터의 자연 높이 합을 main에 전달.
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const measure = (): void => {
+      const header = root.querySelector('.titlebar') as HTMLElement | null
+      const data = root.querySelector('.usage-grid, .usage-msg') as HTMLElement | null
+      const footer = root.querySelector('.statusbar') as HTMLElement | null
+      let h = (header?.offsetHeight ?? 0) + 2 // + 위젯 테두리
+      if (data) h += data.scrollHeight + 16 // + 본문(.body) 상하 패딩
+      if (footer) h += footer.offsetHeight
+      void window.api.widget.fitHeight(Math.ceil(h))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(root)
+    const data = root.querySelector('.usage-grid, .usage-msg')
+    if (data) ro.observe(data)
+    return () => ro.disconnect()
+  }, [grid, view])
 
   // 선택 호스트의 의존성 상태 칩: 캐시 즉시 표시 후 신선 점검(로컬은 빠름, 원격은 1회 SSH)
   useEffect(() => {
@@ -89,7 +112,7 @@ function App() {
   )
 
   return (
-    <div className={`widget view-${view}`}>
+    <div ref={rootRef} className={`widget view-${view}`}>
       <Header
         alias={currentAlias(hosts, selectedHostId)}
         canSwitch={canSwitch(hosts)}

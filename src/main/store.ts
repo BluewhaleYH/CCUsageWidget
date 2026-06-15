@@ -15,8 +15,11 @@ export type WidgetView = 'collapsed' | 'normal'
 
 /** 접힘(헤더만) 높이 */
 export const COLLAPSED_HEIGHT = 40
-/** 펼침 높이 — 일일/월간 데이터가 잘 보이는 고정 높이 */
-export const SHOWN_HEIGHT = 640
+/** 펼침 초기 높이(렌더러 fitHeight가 콘텐츠에 맞게 즉시 조정) */
+export const SHOWN_HEIGHT = 500
+/** fitHeight 클램프 범위 */
+export const SHOWN_MIN = 200
+export const SHOWN_MAX = 1100
 
 /** 창 너비 제약 / 기본값 */
 export const MIN_WIDTH = 960

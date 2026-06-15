@@ -28,6 +28,8 @@ import {
   MAX_WIDTH,
   MIN_WIDTH,
   SHOWN_HEIGHT,
+  SHOWN_MAX,
+  SHOWN_MIN,
   store,
   viewHeight,
   type WidgetView
@@ -60,6 +62,22 @@ export function registerIpc(_getWindow: GetWindow): void {
     store.set('view', view)
   })
   ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')
+
+  // 콘텐츠 높이에 맞춰 창 높이 조정(펼침 상태에서만) — 하단 빈 공간 제거. 높이는 계속 고정.
+  ipcMain.handle('widget:fitHeight', (e, height: number) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    if ((store.get('view') ?? 'normal') !== 'normal') return
+    const h = Math.max(SHOWN_MIN, Math.min(SHOWN_MAX, Math.round(height)))
+    const b = win.getBounds()
+    if (b.height === h) return
+    win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
+    win.setMaximumSize(MAX_WIDTH, SHOWN_MAX)
+    win.setBounds({ x: b.x, y: b.y, width: b.width, height: h })
+    win.setMinimumSize(MIN_WIDTH, h)
+    win.setMaximumSize(MAX_WIDTH, h)
+  })
+
   ipcMain.handle('widget:close', (e) => {
     BrowserWindow.fromWebContents(e.sender)?.close()
   })

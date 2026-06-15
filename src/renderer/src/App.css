@@ -120,9 +120,9 @@ body {
   min-height: 0;
 }
 
-/* 데이터 영역 — 2×3 그리드(행=기간, 열=프로바이더). 넉넉한 간격. 넘치면 스크롤 */
+/* 데이터 영역 — 2×3 그리드(행=기간, 열=프로바이더). 콘텐츠 높이에 맞춤(창이 콘텐츠에 맞게 줄어듦). 넘치면 스크롤 */
 .usage-grid {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -211,11 +211,12 @@ body {
   white-space: nowrap;
 }
 
-/* 지표 — 줄 간격 넉넉히 */
+/* 지표 — 줄 간격 넉넉히, 칩 구역과 사이 여백 */
 .metrics {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: 6px;
 }
 
 .metric {
