@@ -30,7 +30,9 @@
 - `BrowserWindow`: `frame:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`
   - 창은 `transparent:true`이지만(라운드 모서리용) **위젯 본문 배경은 불투명**(`#15171c`)으로 둔다.
     반투명 배경은 뒤 레이아웃과 겹쳐 가독성을 해쳐서 **불투명으로 확정**(blur 미사용).
-  - **창 너비 제약**: `minWidth: 320`, `maxWidth: 640`(기본 380). 높이는 뷰로 결정(아래).
+  - **창 너비 제약**: `minWidth: 640`, `maxWidth: 1280`(기본 760). 너비만 사용자 조정 가능.
+  - **높이 고정**: 사용자가 높이를 드래그로 조정할 수 없다. 현재 뷰 높이로 `minHeight=maxHeight` 고정
+    (접힘=`COLLAPSED_HEIGHT`, 펼침=`SHOWN_HEIGHT`). 높이는 ─/□ 버튼으로만 전환.
 - 헤더바에 `-webkit-app-region: drag`로 위젯 이동, 버튼류는 `no-drag`
 - 위치·너비·뷰(접힘/펼침) 상태를 `electron-store`에 영속화(재시작 복원, `widget:setView/getView`)
 
