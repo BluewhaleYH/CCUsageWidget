@@ -26,8 +26,8 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: rgba(20, 22, 28, 0.78);
-  backdrop-filter: blur(14px);
+  /* 불투명 배경 — 뒤 레이아웃과 겹쳐 보이는 문제 방지 */
+  background: #15171c;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   overflow: hidden;
