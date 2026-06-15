@@ -92,6 +92,9 @@
 - [x] **로컬 사용량 기본 표시** — 내장 `local` 호스트(SSH 없이 로컬 실행)를 목록 맨 앞에 항상 제공·기본 선택.
   SPEC 갱신(DATA/SETUP/CLAUDE) + `hosts/local.ts`(ensureLocalHost 시드·기본선택, builtin 삭제 가드) + `index.ts` 시작 시 시드.
   검수: typecheck/build + 시드/가드/OS 스모크 + **로컬 실데이터 e2e**(claude 실비용 표시) ✓ (이슈 #67)
+- [x] **SETUP UI 연동** — 의존성 점검/설치를 화면에 노출. preload setup 타입 정밀화 + `lib/setup`(라벨/심각도/planNames) +
+  `StatusBar` 상태 칩 + `SetupPanel`(점검·plan·설치 동의·outcomes·다시점검). 현재 선택 호스트(로컬/원격) 균일.
+  검수: typecheck/build + lib 스모크 + 로컬 점검 e2e(ccusage-fallback) + **사용자 육안 통과** ✓ (이슈 #69·#71·#73)
 
 ---
 
