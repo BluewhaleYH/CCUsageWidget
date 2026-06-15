@@ -45,13 +45,24 @@ npm run typecheck  # 타입체크 (main + renderer)
 
 산출물 파일명 예: `CCUsageWidget-0.0.1-mac-arm64.dmg`
 
-> ⚠️ **크로스빌드는 권장하지 않습니다.** Windows 설치파일은 **Windows에서**, macOS는 macOS에서
-> 빌드하세요(wine/도구 의존, 불안정). 멀티 OS 자동 빌드는 CI(GitHub Actions) 도입 시 한 번에
-> 처리할 수 있습니다(현재 후순위).
+> ⚠️ **로컬 크로스빌드는 권장하지 않습니다.** Windows 설치파일은 **Windows에서**, macOS는 macOS에서
+> 빌드하세요(wine/도구 의존, 불안정). 멀티 OS는 아래 **CI**로 한 번에 빌드하세요.
 >
-> - 코드 서명/공증은 미설정(무서명 로컬 빌드). 배포 시 별도 인증서·공증 필요.
+> - 코드 서명/공증은 미설정(무서명). 배포 시 별도 인증서·공증 필요.
 > - `ssh2`의 네이티브 `cpu-features`는 선택사항이라 빌드 도구가 없어도 순수 JS로 동작합니다.
 >   (패키징 안정화를 위해 `npmRebuild: false`)
+
+### CI로 멀티 OS 빌드 (GitHub Actions)
+
+`.github/workflows/release.yml` — mac/win/linux 설치파일을 한 번에 빌드합니다.
+
+- **릴리스**: 버전 태그를 푸시하면 3종 빌드 후 **GitHub Release에 설치파일이 첨부**됩니다.
+  ```bash
+  git tag v0.1.0
+  git push origin v0.1.0
+  ```
+- **수동 실행**: GitHub → Actions → "Build & Release" → *Run workflow* (설치파일을 **아티팩트**로 업로드, 릴리스 생성 안 함).
+- 무서명 빌드입니다(서명/공증 도입 시 워크플로우에 인증서 시크릿 추가 필요).
 
 ## 보안 / 아키텍처 (요약)
 
