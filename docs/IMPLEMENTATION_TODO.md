@@ -85,7 +85,13 @@
   - 자동: typecheck/build, CB1~7 로직 스모크, CB8 보안 감사(렌더러 window.api만) ✓
   - **사용자 육안 통과**(`npm run dev`): 창/드래그·✕/─접기/□확장(input·output)+복원·+등록 모달·◀▶ 전환·2×3 그리드/상태 ✓
   - ⚠️ 미수행(이월): 원격 호스트 SSH 6종 실조회(테스트 호스트 제공 시)
-  - 📌 알려진 갭(스코프 외): 로컬 사용량 기본 표시는 미구현(SPEC상 데이터 출처=등록된 원격 호스트). 추가 시 SPEC 갱신 후 별도 작업
+
+---
+
+## 추가 기능 (Post-Phase)
+- [x] **로컬 사용량 기본 표시** — 내장 `local` 호스트(SSH 없이 로컬 실행)를 목록 맨 앞에 항상 제공·기본 선택.
+  SPEC 갱신(DATA/SETUP/CLAUDE) + `hosts/local.ts`(ensureLocalHost 시드·기본선택, builtin 삭제 가드) + `index.ts` 시작 시 시드.
+  검수: typecheck/build + 시드/가드/OS 스모크 + **로컬 실데이터 e2e**(claude 실비용 표시) ✓ (이슈 #67)
 
 ---
 

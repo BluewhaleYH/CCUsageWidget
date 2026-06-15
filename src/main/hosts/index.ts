@@ -9,6 +9,7 @@ export * from './types'
 export { defaultAlias } from './alias'
 export { buildSshConfig, testConnection } from './connection'
 export type { ConnectionInput, ConnectionTestResult } from './connection'
+export { LOCAL_HOST_ID, buildLocalHost, ensureLocalHost, localOs } from './local'
 export * as repository from './repository'
 export * as credentials from './credentials'
 
@@ -148,6 +149,10 @@ export function deleteHost(id: string): DeleteHostResult {
   const hosts = repository.listHosts()
   const idx = hosts.findIndex((h) => h.id === id)
   if (idx === -1) {
+    return { removed: false, selectedHostId: repository.getSelectedHostId() }
+  }
+  // 내장 호스트(로컬)는 삭제할 수 없다.
+  if (hosts[idx].builtin) {
     return { removed: false, selectedHostId: repository.getSelectedHostId() }
   }
 

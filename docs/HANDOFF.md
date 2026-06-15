@@ -30,11 +30,10 @@ claude/codex/gemini 사용량·비용을 보여주는 **Electron 크로스플랫
   순수 로직(`lib/format·view·grid·host·form`), 2×3 그리드·상태 표시·◀▶ 전환·+ 등록 모달·접기/확장(`widget:setView/getView`)·연결 배지.
   체크박스 9개(이슈 #47~#63, PR #48~#64). typecheck/build·로직 스모크·보안 감사 + **사용자 육안 통과**.
 - 🎉 **4개 Phase 전부 완료.** 진행 체크리스트의 단일 출처: `docs/IMPLEMENTATION_TODO.md` (Phase 0~4 전부 `[x]`).
+- ✅ **로컬 사용량 기본 표시(추가 기능, 완료)** — 내장 `local` 호스트(`hosts/local.ts`)를 목록 맨 앞에 항상 제공·기본 선택.
+  앱 시작 시 `ensureLocalHost()` 시드, `createRunnerForHost('local')`=LocalCommandRunner로 SSH 없이 로컬 ccusage 조회. builtin이라 삭제 불가.
+  SPEC(DATA/SETUP/CLAUDE.md) 갱신 완료. 로컬 실데이터 e2e 검증 완료. (이슈 #67)
 - ⚠️ **이월(미검증)**: 원격 호스트 SSH 6종 실조회 — 테스트 호스트 부재. 사용자 호스트(IP/계정/인증) 제공 시 실연결 확인.
-- 📌 **알려진 갭/결정 대기**: **로컬 사용량 기본 표시 미구현**. 폴러는 등록된 호스트만 조회(`getSelectedHost`),
-  호스트 없으면 "등록된 호스트 없음". `createRunnerForHost('local')`은 setup 진단/검증 스모크에만 쓰이고 usage 폴러는 'local'을 안 씀.
-  SPEC상 데이터 출처=등록된 원격 호스트라 의도된 동작. "로컬도 기본 표시"를 원하면 SPEC(DATA/SETUP/CLAUDE.md) 갱신 후
-  별도 작업 필요(방법 A: 내장 'local' 호스트 시드+기본선택 / 방법 B: 호스트 없을 때 로컬 폴백). **사용자 결정 대기.**
 
 ## 3. 기술 스택 / 핵심 결정
 - Electron + electron-vite, React 18 + TypeScript(strict)
@@ -113,7 +112,8 @@ src/main/
     run.ts          #   runCcusage(runner, args) — ccusage 실패 시 npx 폴백
     parse.ts        #   parseUsage — 방어적 파싱(period/data·totalCost/costUSD 변형, 최근 항목)
     index.ts        #   fetchUsageCells(6종 병렬)·assembleGrid·getCell·fetchUsageGrid
-    poller.ts       #   usagePoller 싱글톤(30s, **등록된 선택 호스트만** 조회 — ★로컬 기본표시 아님, §2 갭 참조). usage:update+host:status 푸시, loading/ready/error
+    poller.ts       #   usagePoller 싱글톤(30s, 현재 선택 호스트만 조회 — 기본은 내장 'local'). usage:update+host:status 푸시, loading/ready/error
+  hosts/local.ts    # ★추가기능: 내장 'local' 호스트(ensureLocalHost 시드·기본선택, localOs, buildLocalHost) — 로컬 사용량 기본 표시
 src/preload/
   index.ts   # contextBridge로 window.api 노출(usage/host/setup/widget), WidgetApi·UsageGrid·HostEntry 등 타입 export
   index.d.ts # 전역 Window.api 타입
@@ -143,11 +143,9 @@ docs/        # SPEC 4종 + IMPLEMENTATION_TODO + HANDOFF(이 파일) + TEMP_SPEC
 
 1. **원격 SSH 실조회 검증(이월, 우선)** — 테스트용 원격 호스트(IP/계정/인증)로 등록→연결테스트→실제 6종 조회·표시 end-to-end 확인.
    ssh2 래퍼·연결테스트는 mock/로컬로만 검증됨. 사용자 호스트 제공 시 진행.
-2. **로컬 사용량 기본 표시(결정 대기)** — §2 갭 참조. 원하면 SPEC(DATA/SETUP/CLAUDE.md) 먼저 갱신 후 체크박스 워크플로우로:
-   - 방법 A: 내장 'local' 호스트 시드(`repository`) + 기본 선택 → poller가 `createRunnerForHost('local')`=LocalCommandRunner로 로컬 조회.
-   - 방법 B: `getSelectedHost()` 없을 때 poller가 로컬 폴백.
-3. **출시 준비(선택)** — `electron-builder` 패키징(mac/win/linux) 실빌드·서명/공증, 트레이 아이콘(옵션), 최종 통합 점검(IMPLEMENTATION_TODO "최종 통합 점검" 섹션).
-4. **SETUP UI 연동(선택)** — `setup:*`(의존성 점검/설치) 결과를 등록 모달/상태에 노출(누락 안내·y/n 설치). 현재 IPC만 있고 화면 미연동.
+2. **출시 준비(선택)** — `electron-builder` 패키징(mac/win/linux) 실빌드·서명/공증, 트레이 아이콘(옵션), 최종 통합 점검(IMPLEMENTATION_TODO "최종 통합 점검" 섹션).
+3. **SETUP UI 연동(선택)** — `setup:*`(의존성 점검/설치) 결과를 등록 모달/상태에 노출(누락 안내·y/n 설치). 현재 IPC만 있고 화면 미연동.
+- (완료) 로컬 사용량 기본 표시 — 내장 'local' 호스트로 구현됨(§2 참조, 이슈 #67).
 
 - 재사용: 데이터/동작은 전부 기존 IPC(`setup:*`/`host:*`/`usage:*`/`widget:*`)로 제공 — 렌더러는 `window.api`만.
 

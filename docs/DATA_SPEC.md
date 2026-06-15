@@ -6,14 +6,20 @@
 
 ## 1. 개요 & 범위
 
-현재 UI에 보이도록 선택된 호스트에서 SSH로 ccusage를 실행해 사용량을 가져온다.
+현재 UI에 보이도록 선택된 호스트에서 ccusage를 실행해 사용량을 가져온다.
 30초마다 갱신하며, 프로바이더(claude/codex/gemini)별로 데이터를 분리해 표시한다.
 SSH 연결·호스트 선택은 `CONNECTION_SPEC.md`, 화면 배치는 `UI_SPEC.md` 참조.
 
+> **데이터 출처(확정)**: **위젯이 실행되는 로컬 컴퓨터**는 내장 호스트(`local`)로 항상 제공되며
+> 신규 실행 시 **기본 선택**된다(로컬 ccusage를 SSH 없이 직접 실행). 원격 컴퓨터는 그 옆에 등록되고
+> ◀▶로 전환한다. 즉 선택 호스트가 `local`이면 로컬에서, 원격이면 SSH로 ccusage를 실행한다.
+> (러너 추상화 `createRunnerForHost(hostId)` — `local`→LocalCommandRunner, 그 외→SshCommandRunner)
+
 ## 2. 구현 단계 (Implementation Steps)
 
-### 2.1 원격 ccusage 실행 (확정: 프로바이더별 개별 호출)
-선택 호스트에 SSH로 아래 명령을 **각각** 실행한다. (daily·monthly × claude·codex·gemini = 6회)
+### 2.1 ccusage 실행 (확정: 프로바이더별 개별 호출)
+선택 호스트에서 아래 명령을 **각각** 실행한다. (daily·monthly × claude·codex·gemini = 6회)
+선택 호스트가 내장 `local`이면 로컬에서 직접, 원격이면 SSH로 실행한다.
 
 | 프로바이더 | daily | monthly |
 |-----------|-------|---------|

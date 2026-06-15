@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { DEFAULT_NORMAL_HEIGHT, store, viewHeight } from './store'
 import { usagePoller } from './usage/poller'
@@ -74,6 +75,9 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  // 내장 로컬 호스트 보장 + 기본 선택 (DATA_SPEC §1) — 폴링 전에 수행
+  ensureLocalHost()
 
   registerIpc(() => mainWindow)
   createWindow()
