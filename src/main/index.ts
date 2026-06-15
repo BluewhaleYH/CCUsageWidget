@@ -49,6 +49,12 @@ function createWindow(): void {
     store.set('windowBounds', { x: b.x, y: b.y, width: clampWidth(b.width), height: b.height })
   })
 
+  // 창이 파괴되면 폴링 중지 + 참조 해제(파괴된 창에 push 방지)
+  mainWindow.on('closed', () => {
+    usagePoller.stop()
+    mainWindow = null
+  })
+
   // 외부 링크는 기본 브라우저로
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

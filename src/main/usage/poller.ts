@@ -65,7 +65,7 @@ class UsagePoller {
       }
 
       // 1) 로딩 상태 푸시(이전 셀 유지 → 깜빡임 방지)
-      this.getWindow()?.webContents.send('usage:update', this.loadingGrid(host))
+      this.send('usage:update', this.loadingGrid(host))
 
       // 2) 조회 → ready, 예외 → error
       const now = new Date().toISOString()
@@ -92,14 +92,19 @@ class UsagePoller {
   /** 결과 그리드를 저장·푸시하고, 호스트 연결 상태를 갱신·푸시한다. (CONNECTION_SPEC §3.6) */
   private push(grid: UsageGrid, host: HostEntry | null): void {
     this.lastGrid = grid
-    const win = this.getWindow()
-    win?.webContents.send('usage:update', grid)
+    this.send('usage:update', grid)
 
     if (host && grid.status !== 'loading') {
       const lastStatus = grid.connection
       updateHost(host.id, { lastStatus, lastCheckedAt: grid.updatedAt })
-      win?.webContents.send('host:status', { id: host.id, lastStatus, lastCheckedAt: grid.updatedAt })
+      this.send('host:status', { id: host.id, lastStatus, lastCheckedAt: grid.updatedAt })
     }
+  }
+
+  /** 렌더러로 안전하게 전송 — 창이 파괴됐으면(닫힘/dev 재시작) 무시한다. */
+  private send(channel: string, payload: unknown): void {
+    const win = this.getWindow()
+    if (win && !win.isDestroyed()) win.webContents.send(channel, payload)
   }
 
   private async fetch(host: HostEntry, now: string): Promise<UsageGrid> {

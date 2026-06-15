@@ -13,20 +13,6 @@ const PERIODS: Array<{ key: Period; label: string }> = [
   { key: 'monthly', label: '월간' }
 ]
 
-// TEST: 더미 모델 — 모델 칩이 3개 이상일 때 표시/줄바꿈을 확인하기 위한 임시 코드.
-// 실제 모델이 3개 미만이면 풀에서 채운다. (검증 후 FILL_TEST_MODELS=false 또는 제거)
-const FILL_TEST_MODELS = true
-const TEST_MODEL_POOL = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5']
-function displayModels(models: string[]): string[] {
-  if (!FILL_TEST_MODELS) return models
-  const out = [...models]
-  for (const t of TEST_MODEL_POOL) {
-    if (out.length >= 3) break
-    if (!out.includes(t)) out.push(t)
-  }
-  return out
-}
-
 /** 모델 칩 라벨에서 에이전트 접두 제거 (claude-opus-4-8 → opus-4-8). 프로바이더는 헤더에 이미 표시. */
 function stripAgent(model: string): string {
   return model.replace(/^(claude|codex|gemini)-/i, '')
@@ -79,7 +65,7 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
 
 function Cell({ cell }: { cell: UsageCell | undefined }) {
   if (!cell || !cell.present) return <div className="cell none">없음</div>
-  const models = displayModels(cell.modelsUsed)
+  const models = cell.modelsUsed
   return (
     <div className="cell">
       <b className="cost">{formatCost(cell.cost)}</b>
