@@ -50,11 +50,11 @@ body {
 }
 
 .titlebar .alias {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   opacity: 0.92;
   padding: 0 4px;
-  max-width: 120px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -62,14 +62,14 @@ body {
 
 .nav,
 .controls button {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border: none;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
   color: #ddd;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
   transition: background 0.12s ease;
 }
@@ -133,7 +133,7 @@ body {
 .usage-grid.msg {
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.6;
   text-align: center;
 }
@@ -161,7 +161,7 @@ body {
   z-index: 1;
   background: #15171c;
   opacity: 0.7;
-  font-size: 11px;
+  font-size: 13px;
   flex: 0 0 auto;
 }
 
@@ -174,8 +174,9 @@ body {
 .rowlabel {
   display: flex;
   align-items: center;
-  font-size: 12px;
-  opacity: 0.7;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.8;
 }
 
 .cell {
@@ -189,26 +190,26 @@ body {
 }
 
 .cell .cost {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   text-align: center;
 }
 
 .cell .models {
-  font-size: 10px;
+  font-size: 12px;
   opacity: 0.55;
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 
 .cell .metric {
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .cell .metric .k {
@@ -231,7 +232,7 @@ body {
 .cell.none {
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.35;
 }
 
@@ -240,9 +241,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 10px;
-  font-size: 10px;
-  opacity: 0.75;
+  padding: 5px 10px;
+  font-size: 12px;
+  opacity: 0.8;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -262,8 +263,8 @@ body {
 
 /* 의존성 점검 상태 칩 */
 .setup-chip {
-  font-size: 10px;
-  padding: 1px 6px;
+  font-size: 12px;
+  padding: 2px 8px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.06);
@@ -340,7 +341,7 @@ button.setup-chip {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .field-row label {
@@ -358,7 +359,7 @@ button.setup-chip {
   flex: 1;
   min-width: 0;
   padding: 4px 6px;
-  font-size: 11px;
+  font-size: 13px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.04);
@@ -371,12 +372,12 @@ button.setup-chip {
 
 .form-errors {
   list-style: none;
-  font-size: 10px;
+  font-size: 12px;
   color: #ff9b9b;
 }
 
 .test-result {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .test-result.ok {
@@ -396,7 +397,7 @@ button.setup-chip {
 
 .modal-actions button {
   padding: 5px 12px;
-  font-size: 11px;
+  font-size: 13px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
@@ -418,7 +419,7 @@ button.setup-chip {
 .setup-msg,
 .setup-os,
 .setup-note {
-  font-size: 11px;
+  font-size: 13px;
   opacity: 0.75;
 }
 
@@ -436,7 +437,7 @@ button.setup-chip {
 .dep-list li {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 13px;
   padding: 3px 6px;
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.04);
@@ -451,7 +452,7 @@ button.setup-chip {
 }
 
 .setup-status {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -468,7 +469,7 @@ button.setup-chip {
 }
 
 .install-plan {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .install-plan .plan-title {
@@ -478,7 +479,7 @@ button.setup-chip {
 
 .install-plan code,
 .outcome-list {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .install-plan code {
