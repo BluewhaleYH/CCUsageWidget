@@ -13,7 +13,7 @@ const PERIODS: Array<{ key: Period; label: string }> = [
  * 행=기간(일일/월) × 열=프로바이더(claude/codex/gemini), 셀=비용($)+토큰.
  * 상태: 호스트 없음 / 연결 안됨 / 오류 / 로딩.
  */
-export function UsageGrid({ grid }: { grid: Grid | null }) {
+export function UsageGrid({ grid, expanded }: { grid: Grid | null; expanded: boolean }) {
   const state = gridState(grid)
 
   if (state === 'loading') return <div className="usage-grid msg">데이터를 불러오는 중…</div>
@@ -39,7 +39,7 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
         <div key={key} className="grid-row">
           <span className="rowlabel">{label}</span>
           {PROVIDERS.map((p) => (
-            <Cell key={p} cell={gridCell(g, p, key)} />
+            <Cell key={p} cell={gridCell(g, p, key)} expanded={expanded} />
           ))}
         </div>
       ))}
@@ -47,12 +47,17 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
   )
 }
 
-function Cell({ cell }: { cell: UsageCell | undefined }) {
+function Cell({ cell, expanded }: { cell: UsageCell | undefined; expanded: boolean }) {
   if (!cell || !cell.present) return <span className="cell none">없음</span>
   return (
     <span className="cell">
       <b className="cost">{formatCost(cell.cost)}</b>
       <i className="tok">{formatTokens(cell.totalTokens)}</i>
+      {expanded && (
+        <em className="io">
+          ↑{formatTokens(cell.inputTokens)} ↓{formatTokens(cell.outputTokens)}
+        </em>
+      )}
     </span>
   )
 }

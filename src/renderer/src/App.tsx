@@ -31,6 +31,17 @@ function App() {
     return off
   }, [])
 
+  // 저장된 뷰(접힘/정상/확장) 복원
+  useEffect(() => {
+    void window.api.widget.getView().then((v) => setView(v))
+  }, [])
+
+  // 뷰 전이 + 창 리사이즈/영속화(main)
+  const applyView = useCallback((next: View) => {
+    setView(next)
+    void window.api.widget.setView(next)
+  }, [])
+
   // 호스트 목록 로드 + 연결 상태 푸시 구독
   useEffect(() => {
     void loadHosts()
@@ -63,15 +74,15 @@ function App() {
         onPrev={() => void switchHost('prev')}
         onNext={() => void switchHost('next')}
         onAdd={() => setModalOpen(true)}
-        onMinimize={() => setView(toggleCollapse)}
-        onMaximize={() => setView(toggleExpand)}
+        onMinimize={() => applyView(toggleCollapse(view))}
+        onMaximize={() => applyView(toggleExpand(view))}
         onClose={() => window.api.widget.close()}
       />
 
       {view !== 'collapsed' && (
         <>
           <main className="body">
-            <UsageGrid grid={grid} />
+            <UsageGrid grid={grid} expanded={view === 'expanded'} />
           </main>
           <StatusBar grid={grid} />
         </>
