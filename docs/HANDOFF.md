@@ -1,6 +1,6 @@
 # HANDOFF — CCUsageWidget 세션 인수인계
 
-> 다른 세션/작업자가 컨텍스트 없이 이어받기 위한 문서. 최종 갱신: **Phase 3(DATA) 완료 시점**.
+> 다른 세션/작업자가 컨텍스트 없이 이어받기 위한 문서. 최종 갱신: **Phase 4(UI) 완료 — 4개 Phase 전부 완료**.
 
 ## 0. 가장 먼저 할 일 (세션 시작 절차)
 1. `CLAUDE.md` 읽기 (프로젝트 청사진 + 세션 시작 규칙)
@@ -25,11 +25,16 @@ claude/codex/gemini 사용량·비용을 보여주는 **Electron 크로스플랫
   ⚠️ **실호스트 SSH 핸드셰이크는 미검증**(테스트 호스트 부재) — 사용자 호스트 제공 시 실연결 확인 필요.
 - ✅ **Phase 3 (DATA) 완료** — ccusage 데이터 파이프라인(`src/main/usage/`): 6종 호출(npx 폴백)·방어적 파싱·
   2×3 그리드·30초 폴링(`poller.ts`)·연결상태 통합·상태(loading/ready/error)·`usage:*` IPC.
-  체크박스 9개를 각각 브랜치/이슈/PR로 처리(이슈 #27~#43, PR #28~#44). **로컬 ccusage 실데이터 e2e 검증 완료.**
-  ⚠️ **원격 SSH 6종 실조회는 미검증**(테스트 호스트 부재) — 사용자 호스트 제공 시 확인 필요.
-- ⏭️ **다음: Phase 4 (UI)** — frameless 위젯 셸·헤더 컨트롤(✕/─/□)·호스트 등록 모달·◀▶ 전환·2×3 그리드 렌더·상태 표시.
-  지금까지 만든 `setup:*`/`host:*`/`usage:*` IPC를 실제 화면에 연결.
-- 진행 체크리스트의 단일 출처: `docs/IMPLEMENTATION_TODO.md` (Phase 0·1·2·3 전부 `[x]`).
+  체크박스 9개(이슈 #27~#43, PR #28~#44). **로컬 ccusage 실데이터 e2e 검증 완료.**
+- ✅ **Phase 4 (UI) 완료** — React 렌더러(`src/renderer/src/`): 컴포넌트(Header/UsageGrid/StatusBar/HostFormModal),
+  순수 로직(`lib/format·view·grid·host·form`), 2×3 그리드·상태 표시·◀▶ 전환·+ 등록 모달·접기/확장(`widget:setView/getView`)·연결 배지.
+  체크박스 9개(이슈 #47~#63, PR #48~#64). typecheck/build·로직 스모크·보안 감사 + **사용자 육안 통과**.
+- 🎉 **4개 Phase 전부 완료.** 진행 체크리스트의 단일 출처: `docs/IMPLEMENTATION_TODO.md` (Phase 0~4 전부 `[x]`).
+- ⚠️ **이월(미검증)**: 원격 호스트 SSH 6종 실조회 — 테스트 호스트 부재. 사용자 호스트(IP/계정/인증) 제공 시 실연결 확인.
+- 📌 **알려진 갭/결정 대기**: **로컬 사용량 기본 표시 미구현**. 폴러는 등록된 호스트만 조회(`getSelectedHost`),
+  호스트 없으면 "등록된 호스트 없음". `createRunnerForHost('local')`은 setup 진단/검증 스모크에만 쓰이고 usage 폴러는 'local'을 안 씀.
+  SPEC상 데이터 출처=등록된 원격 호스트라 의도된 동작. "로컬도 기본 표시"를 원하면 SPEC(DATA/SETUP/CLAUDE.md) 갱신 후
+  별도 작업 필요(방법 A: 내장 'local' 호스트 시드+기본선택 / 방법 B: 호스트 없을 때 로컬 폴백). **사용자 결정 대기.**
 
 ## 3. 기술 스택 / 핵심 결정
 - Electron + electron-vite, React 18 + TypeScript(strict)
@@ -108,18 +113,22 @@ src/main/
     run.ts          #   runCcusage(runner, args) — ccusage 실패 시 npx 폴백
     parse.ts        #   parseUsage — 방어적 파싱(period/data·totalCost/costUSD 변형, 최근 항목)
     index.ts        #   fetchUsageCells(6종 병렬)·assembleGrid·getCell·fetchUsageGrid
-    poller.ts       #   usagePoller 싱글톤(30s, 선택 호스트, usage:update+host:status 푸시, loading/ready/error)
+    poller.ts       #   usagePoller 싱글톤(30s, **등록된 선택 호스트만** 조회 — ★로컬 기본표시 아님, §2 갭 참조). usage:update+host:status 푸시, loading/ready/error
 src/preload/
-  index.ts   # contextBridge로 window.api 노출(usage/host/setup/widget), WidgetApi·UsageGrid 등 타입 export
+  index.ts   # contextBridge로 window.api 노출(usage/host/setup/widget), WidgetApi·UsageGrid·HostEntry 등 타입 export
   index.d.ts # 전역 Window.api 타입
-src/renderer/
-  index.html, src/main.tsx, src/App.tsx(플레이스홀더 위젯), src/App.css(투명·드래그)
+src/renderer/src/     # ★Phase 4: React UI
+  App.tsx           # 루트: 상태(view/grid/hosts/selectedHostId/modal), usage.onUpdate·host.onStatus 구독, host.list 로드
+  components/        # Header(별칭·◀▶·+·─□✕·연결점) / UsageGrid(2×3·상태) / StatusBar(갱신시각·배지) / HostFormModal(등록 폼)
+  lib/               # 순수 로직: format(비용/토큰/시각)·view(접기/확장 전이)·grid(상태/셀)·host(별칭/전환/연결점)·form(검증/인자빌드)·types(preload 재노출)
+  App.css            # glass 다크 위젯 스타일
 electron.vite.config.ts, tsconfig*.json, electron-builder.yml, package.json
 docs/        # SPEC 4종 + IMPLEMENTATION_TODO + HANDOFF(이 파일) + TEMP_SPEC
 ```
 
-### 현재 IPC 채널 (Phase 0~3)
-- 동작: `widget:minimize` `widget:maximize` `widget:close`
+### 현재 IPC 채널 (Phase 0~4, 전체)
+- **widget (Phase 4)**: `widget:setView`(접힘/정상/확장 — 리사이즈+영속화) / `widget:getView` / `widget:close`
+  (구 `widget:minimize/maximize`는 제거되고 setView로 대체됨)
 - **setup (Phase 1)**: `setup:check`(점검만, 설치X) / `setup:install`(동의 후 설치) / `setup:status`(캐시 조회)
 - **host (Phase 2)**: `host:add`(등록=연결테스트 후 저장) / `host:list`({hosts, selectedHostId}, 비밀 미포함) /
   `host:test`(연결테스트 단독) / `host:switch`('prev'|'next' 또는 {id}, 전환 시 즉시 갱신) / `host:update` / `host:remove` /
@@ -127,32 +136,29 @@ docs/        # SPEC 4종 + IMPLEMENTATION_TODO + HANDOFF(이 파일) + TEMP_SPEC
 - **usage (Phase 3)**: `usage:update`(푸시 = `UsageGrid`, poller→렌더러) / `usage:refresh`(요청 → 즉시 폴링)
 - 규칙: ccusage/SSH 접근은 **메인 프로세스 경유만**, 새 IPC는 **preload 화이트리스트에만** 추가.
 - preload 노출 API: `window.api.{usage,setup,host,widget}`
-  (usage: onUpdate(grid)/refresh, host: add/list/test/switch/update/remove/onStatus)
+  (usage: onUpdate(grid)/refresh, host: add/list/test/switch/update/remove/onStatus, widget: setView/getView/close)
 
-## 7. 다음 작업 (Phase 4 — UI) 착수 포인트
-- 기준 문서: `docs/UI_SPEC.md` (관련: DATA_SPEC §2.4~2.5 그리드·상태 / CONNECTION_SPEC 버튼 동작)
-- 핵심 작업(렌더러 `src/renderer/` — 현재 플레이스홀더 App):
-  1. frameless/투명/always-on-top 셸 + 드래그 영역(헤더 `-webkit-app-region: drag`, 버튼 `no-drag`).
-  2. 헤더 컨트롤: ✕ 종료 / ─ 최소화(접기=헤더만) / □ 최대화(상세 확장) → `window.api.widget.*`. 접힘/확장 상태 영속화.
-  3. + 버튼: 호스트 등록 폼/모달 → `window.api.host.test`(연결테스트) → `host.add`. 별칭 기본값 제안.
-  4. ◀▶ 버튼: `window.api.host.switch('prev'|'next')` + 현재 별칭 표시(+ 호스트 없음 안내).
-  5. **2×3 그리드 렌더**: `window.api.usage.onUpdate((grid)=>...)` 구독 → 행=기간 / 열=claude/codex/gemini,
-     셀에 비용($)+토큰. 상태: `cell.present===false`→"없음", `grid.connection==='disconnected'`→"연결 안됨",
-     `grid.status`(loading/ready/error), `grid.updatedAt` 갱신시각. 수동 새로고침 → `usage.refresh()`.
-  6. 호스트 연결 상태 배지: `window.api.host.onStatus(...)` 구독.
-- 재사용: 모든 데이터/동작은 **이미 만든 IPC**(`setup:*`/`host:*`/`usage:*`)로 제공됨 — 렌더러는 `window.api`만 사용.
-  타입은 preload가 `UsageGrid`/`UsageCell` 등 재노출. **새 Node 기능 직접 접근 금지**(보안 경계).
-- Phase 끝 🔍 **검수**: 전 컨트롤 동작, 상태 표시, 보안 경계 준수, 전체 통합.
+## 7. 남은 작업 / 다음 후보 (4개 Phase 완료 후)
+계획된 Phase 0~4는 모두 끝났다. 남은 것은 **검증 이월·선택 기능·출시 준비**다.
 
-> ⚠️ **원격 SSH 실조회 미검증 이월**(Phase 2·3): ssh2 래퍼·6종 조회는 mock/로컬 ccusage로만 검증.
-> 전체 통합(원격 호스트 등록→실제 사용량 표시)은 **사용자가 테스트 호스트(IP/계정/인증) 제공 시** 확인.
+1. **원격 SSH 실조회 검증(이월, 우선)** — 테스트용 원격 호스트(IP/계정/인증)로 등록→연결테스트→실제 6종 조회·표시 end-to-end 확인.
+   ssh2 래퍼·연결테스트는 mock/로컬로만 검증됨. 사용자 호스트 제공 시 진행.
+2. **로컬 사용량 기본 표시(결정 대기)** — §2 갭 참조. 원하면 SPEC(DATA/SETUP/CLAUDE.md) 먼저 갱신 후 체크박스 워크플로우로:
+   - 방법 A: 내장 'local' 호스트 시드(`repository`) + 기본 선택 → poller가 `createRunnerForHost('local')`=LocalCommandRunner로 로컬 조회.
+   - 방법 B: `getSelectedHost()` 없을 때 poller가 로컬 폴백.
+3. **출시 준비(선택)** — `electron-builder` 패키징(mac/win/linux) 실빌드·서명/공증, 트레이 아이콘(옵션), 최종 통합 점검(IMPLEMENTATION_TODO "최종 통합 점검" 섹션).
+4. **SETUP UI 연동(선택)** — `setup:*`(의존성 점검/설치) 결과를 등록 모달/상태에 노출(누락 안내·y/n 설치). 현재 IPC만 있고 화면 미연동.
+
+- 재사용: 데이터/동작은 전부 기존 IPC(`setup:*`/`host:*`/`usage:*`/`widget:*`)로 제공 — 렌더러는 `window.api`만.
 
 ## 8. Git 상태
 - 브랜치: `main`, 원격: `https://github.com/BluewhaleYH/CCUsageWidget.git`
-- 최신 커밋: `d5f66a0 Merge pull request #44 ...` (Phase 3-CB9 검수)
-- Phase 3는 체크박스 9개를 각각 브랜치/이슈/PR로 처리(이슈 #27~#43, PR #28~#44 — 전부 close/merge, 브랜치 정리됨).
+- 최신 커밋: Phase 4-CB9 검수 머지(PR #64). Phase 4 체크박스 9개(이슈 #47~#63, PR #48~#64 — 전부 close/merge, 브랜치 정리됨).
+- 누적: Phase 1(이슈 #1) · Phase 2(#5~#23) · Phase 3(#27~#43) · Phase 4(#47~#63) 모두 close.
 - **작업 단위 = TODO 체크박스 하나** (CLAUDE.md 규칙): 브랜치→이슈→진행코멘트→자체검수→푸시→PR머지+이슈close→체크갱신.
   Phase를 한 묶음으로 처리하지 말 것.
+- **검증 패턴(참고)**: store/electron/ssh2 의존 로직은 esbuild 번들+해당 모듈 mock으로 node 스모크.
+  파서/파이프라인은 로컬 `npx ccusage@latest` 실제 JSON. UI 순수 로직(`lib/*`)은 번들 후 node 스모크, 시각은 `npm run dev` 육안.
 - 작업 흐름: 사용자가 "커밋/푸시" 요청 시에만 커밋. 커밋 메시지 한국어, 마지막 줄에
   `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 - **검증 패턴(참고)**: store/electron/ssh2가 필요한 로직은 esbuild로 번들하며 해당 모듈을 mock해 스모크.
