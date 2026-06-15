@@ -27,6 +27,11 @@ function displayModels(models: string[]): string[] {
   return out
 }
 
+/** 모델 칩 라벨에서 에이전트 접두 제거 (claude-opus-4-8 → opus-4-8). 프로바이더는 헤더에 이미 표시. */
+function stripAgent(model: string): string {
+  return model.replace(/^(claude|codex|gemini)-/i, '')
+}
+
 type TokenField = 'inputTokens' | 'outputTokens' | 'cacheCreationTokens' | 'cacheReadTokens' | 'totalTokens'
 const METRICS: Array<{ label: string; field: TokenField; total?: boolean }> = [
   { label: 'Input', field: 'inputTokens' },
@@ -82,7 +87,7 @@ function Cell({ cell }: { cell: UsageCell | undefined }) {
         <div className="models">
           {models.map((m) => (
             <span key={m} className="model-chip" title={m}>
-              {m}
+              {stripAgent(m)}
             </span>
           ))}
         </div>
