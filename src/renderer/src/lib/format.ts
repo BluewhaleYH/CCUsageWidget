@@ -12,9 +12,10 @@ export function formatNumber(n: number): string {
   return v.toLocaleString('en-US')
 }
 
-/** 토큰 수 → 축약("1.2K"/"3.4M"), 1000 미만은 그대로 */
+/** 토큰 수 → 축약("1.2K"/"3.4M"/"5.6B"), 1000 미만은 그대로 */
 export function formatTokens(n: number): string {
   const v = Number.isFinite(n) ? n : 0
+  if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)}B`
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`
   if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`
   return String(v)
