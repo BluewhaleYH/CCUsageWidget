@@ -6,6 +6,12 @@ export function formatCost(usd: number): string {
   return `$${n.toFixed(2)}`
 }
 
+/** 정수 → 천 단위 콤마("21,589") */
+export function formatNumber(n: number): string {
+  const v = Number.isFinite(n) ? n : 0
+  return v.toLocaleString('en-US')
+}
+
 /** 토큰 수 → 축약("1.2K"/"3.4M"), 1000 미만은 그대로 */
 export function formatTokens(n: number): string {
   const v = Number.isFinite(n) ? n : 0

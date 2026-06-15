@@ -22,7 +22,13 @@ export interface UsageCell {
   cost: number
   inputTokens: number
   outputTokens: number
+  /** 캐시 생성 토큰 */
+  cacheCreationTokens: number
+  /** 캐시 읽기 토큰 */
+  cacheReadTokens: number
   totalTokens: number
+  /** 사용된 모델 목록 */
+  modelsUsed: string[]
 }
 
 /**
