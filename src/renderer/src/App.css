@@ -202,9 +202,9 @@ body {
 }
 
 .model-chip {
-  font-size: 10.5px;
+  font-size: 12.5px;
   line-height: 1.5;
-  padding: 1px 7px;
+  padding: 1px 8px;
   border-radius: 6px;
   background: rgba(120, 150, 240, 0.18);
   color: #c7d2fe;
@@ -222,7 +222,7 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 .metric .k {
