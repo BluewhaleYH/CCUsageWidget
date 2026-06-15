@@ -79,7 +79,7 @@
 - [x] + 버튼 IP 등록 폼/모달(CONNECTION 로직 연동) — HostFormModal + lib/form, host.test→host.add. 검수: typecheck/build + form 스모크 ✓ (이슈 #53)
 - [x] ◀▶ 버튼 호스트 전환 + 현재 별칭 표시(+ 호스트 없음 안내) — lib/host + App host.list/switch/onStatus. 검수: typecheck/build + host 스모크 ✓ (이슈 #51)
 - [x] 데이터 영역(2×3) 렌더링 + 상태 표시(로딩/에러/연결안됨/갱신시각) — UsageGrid/StatusBar + lib/grid, usage.onUpdate 구독. 검수: typecheck/build + grid 스모크 ✓ (이슈 #49)
-- [ ] 전체 레이아웃·크기·반응형
+- [x] 전체 레이아웃·크기·반응형 — 별칭 말줄임·행 높이 균등·셀 오버플로우·모달 스크롤. 검수: typecheck/build + CSS 반영 ✓ (이슈 #59)
 - [ ] preload 화이트리스트 API만 사용 확인
 - [ ] 🔍 **검수**: 전 컨트롤 동작, 상태 표시, 보안 경계 준수, 전체 통합 동작 확인 → 출시 후보 점검
 
