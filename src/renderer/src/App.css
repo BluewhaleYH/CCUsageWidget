@@ -395,3 +395,92 @@ button.setup-chip {
   opacity: 0.5;
   cursor: default;
 }
+
+/* SETUP 점검/설치 패널 */
+.setup-msg,
+.setup-os,
+.setup-note {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.setup-note {
+  color: #e6c07a;
+}
+
+.dep-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dep-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dep-list li.off .dep-state {
+  color: #ff9b9b;
+}
+
+.dep-list li.on .dep-state {
+  color: #8fd6a6;
+}
+
+.setup-status {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.setup-status.warn {
+  color: #e6c07a;
+}
+
+.setup-status.error {
+  color: #ff9b9b;
+}
+
+.setup-status.ok {
+  color: #8fd6a6;
+}
+
+.install-plan {
+  font-size: 10px;
+}
+
+.install-plan .plan-title {
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.install-plan code,
+.outcome-list {
+  font-size: 10px;
+}
+
+.install-plan code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.outcome-list {
+  list-style: none;
+}
+
+.outcome-list li.installed {
+  color: #8fd6a6;
+}
+
+.outcome-list li.failed {
+  color: #ff9b9b;
+}
+
+.outcome-list li.skipped {
+  opacity: 0.6;
+}

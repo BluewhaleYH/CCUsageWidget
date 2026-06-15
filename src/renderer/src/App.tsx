@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Header } from './components/Header'
 import { HostFormModal } from './components/HostFormModal'
+import { SetupPanel } from './components/SetupPanel'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
 import { canSwitch, connDot, currentAlias } from './lib/host'
@@ -24,6 +25,7 @@ function App() {
   const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [setupStatus, setSetupStatus] = useState<HostSetupStatus>('unknown')
+  const [setupOpen, setSetupOpen] = useState(false)
 
   const loadHosts = useCallback(async () => {
     const res = (await window.api.host.list()) as HostListResult
@@ -106,7 +108,11 @@ function App() {
           <main className="body">
             <UsageGrid grid={grid} expanded={view === 'expanded'} />
           </main>
-          <StatusBar grid={grid} setupStatus={setupStatus} />
+          <StatusBar
+            grid={grid}
+            setupStatus={setupStatus}
+            onOpenSetup={() => setSetupOpen(true)}
+          />
         </>
       )}
 
@@ -117,6 +123,15 @@ function App() {
             void loadHosts()
             void window.api.usage.refresh()
           }}
+        />
+      )}
+
+      {setupOpen && (
+        <SetupPanel
+          hostId={selectedHostId ?? 'local'}
+          hostAlias={currentAlias(hosts, selectedHostId)}
+          onClose={() => setSetupOpen(false)}
+          onStatusChange={setSetupStatus}
         />
       )}
     </div>

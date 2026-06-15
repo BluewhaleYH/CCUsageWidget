@@ -1,4 +1,9 @@
-import type { HostSetupStatus } from './types'
+import type { DependencyName, HostSetupStatus, InstallPlanItem } from './types'
+
+/** 설치 계획에서 의존성 이름 목록을 뽑는다(setup.install 인자). */
+export function planNames(plan: InstallPlanItem[]): DependencyName[] {
+  return plan.map((p) => p.name)
+}
 
 /** setup 상태 → 표시 라벨. (SETUP_SPEC §4.7) */
 export function statusLabel(status: HostSetupStatus): string {
