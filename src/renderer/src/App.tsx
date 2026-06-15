@@ -106,7 +106,7 @@ function App() {
       {view !== 'collapsed' && (
         <>
           <main className="body">
-            <UsageGrid grid={grid} expanded={view === 'expanded'} />
+            <UsageGrid grid={grid} />
           </main>
           <StatusBar
             grid={grid}

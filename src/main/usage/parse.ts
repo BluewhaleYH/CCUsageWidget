@@ -35,8 +35,24 @@ export function parseUsage(provider: Provider, period: Period, raw: string): Usa
     cost: num(item.totalCost ?? item.costUSD ?? item.cost),
     inputTokens,
     outputTokens,
-    totalTokens: num(item.totalTokens) || inputTokens + outputTokens
+    cacheCreationTokens: num(item.cacheCreationTokens),
+    cacheReadTokens: num(item.cacheReadTokens),
+    totalTokens: num(item.totalTokens) || inputTokens + outputTokens,
+    modelsUsed: parseModels(item)
   }
+}
+
+/** modelsUsed(문자열 배열) 또는 modelBreakdowns[].modelName에서 모델 목록 추출 */
+function parseModels(item: Record<string, unknown>): string[] {
+  const direct = item.modelsUsed
+  if (Array.isArray(direct)) return direct.filter((m): m is string => typeof m === 'string')
+  const breakdowns = item.modelBreakdowns
+  if (Array.isArray(breakdowns)) {
+    return breakdowns
+      .map((b) => (isRecord(b) && typeof b.modelName === 'string' ? b.modelName : null))
+      .filter((m): m is string => m !== null)
+  }
+  return []
 }
 
 /** period(daily/monthly) → 없으면 data → 그 외 첫 배열 필드를 찾는다. */
@@ -51,7 +67,18 @@ function pickArray(root: Record<string, unknown>, period: Period): unknown[] {
 }
 
 function emptyCell(provider: Provider, period: Period): UsageCell {
-  return { provider, period, present: false, cost: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 }
+  return {
+    provider,
+    period,
+    present: false,
+    cost: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheCreationTokens: 0,
+    cacheReadTokens: 0,
+    totalTokens: 0,
+    modelsUsed: []
+  }
 }
 
 /** 숫자만 통과(그 외 0). -0 정규화. */
