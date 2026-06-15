@@ -1,11 +1,16 @@
 appId: com.bluewhaleyh.ccusagewidget
 productName: CCUsageWidget
+# 산출물: release/ (gitignore됨). 아이콘은 기본 Electron 아이콘(브랜딩 아이콘은 후순위).
 directories:
   output: release
   buildResources: build
+# 산출물 파일명: 예) CCUsageWidget-0.0.1-mac-arm64.dmg
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 files:
   - out/**/*
   - package.json
+# ssh2의 네이티브 cpu-features는 선택사항(없어도 순수 JS로 동작) → electron ABI 리빌드 생략으로 패키징 안정화.
+npmRebuild: false
 mac:
   target: dmg
   category: public.app-category.developer-tools
@@ -14,3 +19,11 @@ win:
 linux:
   target: AppImage
   category: Utility
+# Windows 설치 UX (NSIS)
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CCUsageWidget
