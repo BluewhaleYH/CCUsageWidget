@@ -50,11 +50,11 @@ body {
 }
 
 .titlebar .alias {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   opacity: 0.92;
   padding: 0 4px;
-  max-width: 140px;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -120,20 +120,21 @@ body {
   min-height: 0;
 }
 
-/* 데이터 그리드 (2행 × 3열 + 라벨 열) — 항목이 많아 내용에 맞춰 늘고, 넘치면 스크롤 */
+/* 데이터 영역 — 기간 섹션(일일/월간)마다 프로바이더 카드 3개. 넘치면 스크롤 */
 .usage-grid {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
+  padding-right: 2px;
 }
 
 .usage-grid.msg {
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   opacity: 0.6;
   text-align: center;
 }
@@ -143,97 +144,107 @@ body {
   opacity: 0.9;
 }
 
-.grid-row {
+/* 기간 섹션 */
+.period-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.92;
+  margin-bottom: 7px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cards {
   display: grid;
-  grid-template-columns: 36px 1fr 1fr 1fr;
-  align-items: stretch;
-  gap: 4px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
-/* 데이터 행은 내용 높이에 맞춤(전체 항목 표시) */
-.grid-row:not(.head) {
-  flex: 0 0 auto;
-}
-
-.grid-row.head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #15171c;
-  opacity: 0.7;
-  font-size: 13px;
-  flex: 0 0 auto;
-}
-
-.colhead {
-  text-align: center;
-  padding: 3px 0;
-  font-weight: 600;
-}
-
-.rowlabel {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.8;
-}
-
-.cell {
+/* 프로바이더 카드 */
+.card {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 7px 6px;
-  border-radius: 7px;
+  gap: 3px;
+  padding: 10px 9px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   min-width: 0;
 }
 
-.cell .cost {
-  font-size: 18px;
+.card-head {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.card .cost {
+  font-size: 20px;
   font-weight: 700;
   text-align: center;
+  margin-bottom: 1px;
 }
 
-.cell .models {
-  font-size: 12px;
-  opacity: 0.55;
-  text-align: center;
+/* 모델 칩 — 2개 이상이면 줄바꿈(레이아웃 깨짐 방지) */
+.card .models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  margin: 1px 0 3px;
+}
+
+.model-chip {
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(120, 150, 240, 0.18);
+  color: #c7d2fe;
+  white-space: nowrap;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: 2px;
 }
 
-.cell .metric {
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric {
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
-.cell .metric .k {
+.metric .k {
   opacity: 0.55;
   white-space: nowrap;
 }
 
-.cell .metric .v {
+.metric .v {
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
   text-align: right;
 }
 
-.cell .metric.total {
-  font-weight: 600;
+.metric.total {
+  font-weight: 700;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 2px;
-  padding-top: 2px;
+  margin-top: 3px;
+  padding-top: 3px;
 }
 
-.cell.none {
-  align-items: center;
-  justify-content: center;
+.card.empty .card-none {
+  text-align: center;
   font-size: 14px;
-  opacity: 0.35;
+  opacity: 0.3;
+  padding: 10px 0;
 }
 
 /* 상태 푸터 */
@@ -241,9 +252,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 10px;
-  font-size: 12px;
-  opacity: 0.8;
+  padding: 6px 11px;
+  font-size: 13px;
+  opacity: 0.82;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -263,8 +274,8 @@ body {
 
 /* 의존성 점검 상태 칩 */
 .setup-chip {
-  font-size: 12px;
-  padding: 2px 8px;
+  font-size: 13px;
+  padding: 2px 9px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.06);
