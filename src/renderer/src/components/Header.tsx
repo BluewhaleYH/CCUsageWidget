@@ -49,7 +49,7 @@ export function Header({
         <button className={view === 'collapsed' ? 'active' : ''} onClick={onMinimize} title="접기">
           ─
         </button>
-        <button className={view === 'expanded' ? 'active' : ''} onClick={onMaximize} title="확장">
+        <button className={view === 'normal' ? 'active' : ''} onClick={onMaximize} title="펼치기">
           □
         </button>
         <button onClick={onClose} title="종료">

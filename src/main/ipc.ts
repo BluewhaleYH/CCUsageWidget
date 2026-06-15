@@ -23,7 +23,7 @@ import {
   type SwitchDirection
 } from './hosts'
 import { createRunnerForHost, DEFAULT_HOST_ID, disposeRunner } from './runnerFactory'
-import { DEFAULT_NORMAL_HEIGHT, store, viewHeight, type WidgetView } from './store'
+import { store, viewHeight, type WidgetView } from './store'
 import { usagePoller } from './usage/poller'
 
 type GetWindow = () => BrowserWindow | null
@@ -37,22 +37,12 @@ type GetWindow = () => BrowserWindow | null
  */
 export function registerIpc(_getWindow: GetWindow): void {
   // --- widget 제어 (UI_SPEC §3.4~3.5) ---
-  // 접기/확장: 프리셋 높이로 리사이즈 + view 영속화. normal 높이는 windowBounds에 보존.
+  // 접기(헤더만)/펼침(데이터 표시 고정 높이)로 리사이즈 + view 영속화. 너비는 유지.
   ipcMain.handle('widget:setView', (e, view: WidgetView) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
     const b = win.getBounds()
-    const prev = store.get('windowBounds')
-    const current = store.get('view') ?? 'normal'
-
-    // normal에서 벗어나기 전, 현재(수동 리사이즈 포함) 높이를 normal로 캡처
-    if (current === 'normal') {
-      store.set('windowBounds', { x: b.x, y: b.y, width: b.width, height: b.height })
-    }
-    const normalHeight =
-      current === 'normal' ? b.height : (prev?.height ?? DEFAULT_NORMAL_HEIGHT)
-
-    win.setBounds({ x: b.x, y: b.y, width: b.width, height: viewHeight(view, normalHeight) })
+    win.setBounds({ x: b.x, y: b.y, width: b.width, height: viewHeight(view) })
     store.set('view', view)
   })
   ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')

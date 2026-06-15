@@ -91,12 +91,11 @@ const api = {
       ipcRenderer.invoke('setup:status', args)
   },
   widget: {
-    /** 뷰 설정(접힘/정상/확장) — 창 리사이즈 + 영속화 */
-    setView: (view: 'collapsed' | 'normal' | 'expanded'): Promise<void> =>
+    /** 뷰 설정(접힘/펼침) — 창 리사이즈 + 영속화 */
+    setView: (view: 'collapsed' | 'normal'): Promise<void> =>
       ipcRenderer.invoke('widget:setView', view),
     /** 저장된 뷰 조회(시작 시 복원용) */
-    getView: (): Promise<'collapsed' | 'normal' | 'expanded'> =>
-      ipcRenderer.invoke('widget:getView'),
+    getView: (): Promise<'collapsed' | 'normal'> => ipcRenderer.invoke('widget:getView'),
     close: (): Promise<void> => ipcRenderer.invoke('widget:close')
   }
 }
