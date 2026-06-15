@@ -12,6 +12,11 @@ export function listHosts(): HostEntry[] {
   return store.get('hosts') ?? []
 }
 
+/** 호스트 목록을 통째로 설정한다(시드/마이그레이션용). */
+export function setHosts(hosts: HostEntry[]): void {
+  store.set('hosts', hosts)
+}
+
 /** id로 호스트 1건 조회 */
 export function getHost(id: string): HostEntry | undefined {
   return listHosts().find((h) => h.id === id)

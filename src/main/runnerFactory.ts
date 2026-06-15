@@ -1,9 +1,9 @@
-import { buildSshConfig, credentials, repository } from './hosts'
+import { buildSshConfig, credentials, LOCAL_HOST_ID, repository } from './hosts'
 import { LocalCommandRunner, type CommandRunner } from './setup'
 import { SshCommandRunner } from './ssh/runner'
 
-/** hostId 미지정 시 사용하는 로컬 점검 키 (Phase 1) */
-export const DEFAULT_HOST_ID = 'local'
+/** 로컬 실행 키 — 내장 로컬 호스트 id와 동일('local'). */
+export const DEFAULT_HOST_ID = LOCAL_HOST_ID
 
 /**
  * 호스트별 명령 러너를 만든다. (ipc.ts·usage/poller.ts 공유 seam)

@@ -27,6 +27,8 @@ export interface HostEntry {
   lastStatus: 'connected' | 'disconnected' | 'unknown'
   /** 마지막 점검 시각 (ISO timestamp) */
   lastCheckedAt?: string
+  /** 내장 호스트 여부(로컬 등) — true면 삭제 불가, SSH 없이 로컬 실행 */
+  builtin?: boolean
 }
 
 /**
