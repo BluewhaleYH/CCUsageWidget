@@ -13,7 +13,7 @@
 - [x] Phase 1 — SETUP (의존성 점검/설치)
 - [x] Phase 2 — CONNECTION (원격 연결·호스트 관리)
 - [x] Phase 3 — DATA (조회·표시)
-- [ ] Phase 4 — UI (위젯 UI·윈도우)
+- [x] Phase 4 — UI (위젯 UI·윈도우)
 
 ---
 
@@ -81,7 +81,11 @@
 - [x] 데이터 영역(2×3) 렌더링 + 상태 표시(로딩/에러/연결안됨/갱신시각) — UsageGrid/StatusBar + lib/grid, usage.onUpdate 구독. 검수: typecheck/build + grid 스모크 ✓ (이슈 #49)
 - [x] 전체 레이아웃·크기·반응형 — 별칭 말줄임·행 높이 균등·셀 오버플로우·모달 스크롤. 검수: typecheck/build + CSS 반영 ✓ (이슈 #59)
 - [x] preload 화이트리스트 API만 사용 확인 — 렌더러 금지패턴 0건, window.api만, webPreferences 불변. 검수: 감사 grep + typecheck/build ✓ (이슈 #61)
-- [ ] 🔍 **검수**: 전 컨트롤 동작, 상태 표시, 보안 경계 준수, 전체 통합 동작 확인 → 출시 후보 점검
+- [x] 🔍 **검수**: 전 컨트롤 동작, 상태 표시, 보안 경계 준수, 전체 통합 동작 확인 → 출시 후보 점검 (이슈 #63)
+  - 자동: typecheck/build, CB1~7 로직 스모크, CB8 보안 감사(렌더러 window.api만) ✓
+  - **사용자 육안 통과**(`npm run dev`): 창/드래그·✕/─접기/□확장(input·output)+복원·+등록 모달·◀▶ 전환·2×3 그리드/상태 ✓
+  - ⚠️ 미수행(이월): 원격 호스트 SSH 6종 실조회(테스트 호스트 제공 시)
+  - 📌 알려진 갭(스코프 외): 로컬 사용량 기본 표시는 미구현(SPEC상 데이터 출처=등록된 원격 호스트). 추가 시 SPEC 갱신 후 별도 작업
 
 ---
 
