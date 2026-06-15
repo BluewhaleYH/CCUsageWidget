@@ -11,6 +11,17 @@ export type {
   RegisterHostInput,
   RegisterHostResult
 } from '../../../preload'
+export type {
+  SetupReport,
+  DependencyCheck,
+  HostSetupStatus,
+  InstallPlanItem,
+  InstallOutcome,
+  DependencyName,
+  SetupCheckResult,
+  SetupInstallResult,
+  SetupStatusResult
+} from '../../../preload'
 
 import type { HostEntry } from '../../../preload'
 

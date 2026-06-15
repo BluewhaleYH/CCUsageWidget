@@ -228,12 +228,50 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.statusbar .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .badge.on {
   color: #67d28a;
 }
 
 .badge.off {
   color: #e07a7a;
+}
+
+/* 의존성 점검 상태 칩 */
+.setup-chip {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cfcfcf;
+}
+
+button.setup-chip {
+  cursor: pointer;
+}
+
+.setup-chip.ok {
+  color: #8fd6a6;
+}
+
+.setup-chip.warn {
+  color: #e6c07a;
+  border-color: rgba(230, 192, 122, 0.35);
+}
+
+.setup-chip.error {
+  color: #ff9b9b;
+  border-color: rgba(255, 155, 155, 0.4);
+}
+
+.setup-chip.unknown {
+  opacity: 0.55;
 }
 
 /* 등록 모달 */

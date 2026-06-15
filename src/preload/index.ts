@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { UsageGrid } from '../main/usage/types'
+import type {
+  DependencyName,
+  HostSetupStatus,
+  InstallOutcome,
+  InstallPlanItem,
+  SetupReport
+} from '../main/setup'
 
 // 렌더러가 쓰는 데이터 타입 재노출(컴파일타임 전용 — 런타임 경계 불변)
 export type { UsageGrid, UsageCell, UsageStatus, Provider, Period } from '../main/usage/types'
@@ -10,6 +17,32 @@ export type {
   RegisterHostInput,
   RegisterHostResult
 } from '../main/hosts'
+export type {
+  SetupReport,
+  DependencyCheck,
+  HostSetupStatus,
+  InstallPlanItem,
+  InstallOutcome,
+  DependencyName
+} from '../main/setup'
+
+/** setup:check 결과 */
+export interface SetupCheckResult {
+  report: SetupReport
+  status: HostSetupStatus
+  plan: InstallPlanItem[]
+}
+/** setup:install 결과 */
+export interface SetupInstallResult {
+  outcomes: InstallOutcome[]
+  report: SetupReport
+  status: HostSetupStatus
+}
+/** setup:status 결과(캐시) */
+export interface SetupStatusResult {
+  report: SetupReport | null
+  status: HostSetupStatus
+}
 
 /**
  * 렌더러에 노출되는 안전한 API (contextBridge 화이트리스트).
@@ -47,14 +80,14 @@ const api = {
     }
   },
   setup: {
-    /** 의존성 점검(설치는 수행하지 않음). { report, status, plan } 반환 */
-    check: (args?: { hostId?: string }): Promise<unknown> =>
+    /** 의존성 점검(설치는 수행하지 않음). */
+    check: (args?: { hostId?: string }): Promise<SetupCheckResult> =>
       ipcRenderer.invoke('setup:check', args),
-    /** 동의(y)한 의존성 설치. names 생략 시 누락 전체. { outcomes, report, status } 반환 */
-    install: (args?: { hostId?: string; names?: string[] }): Promise<unknown> =>
+    /** 동의(y)한 의존성 설치. names 생략 시 누락 전체. */
+    install: (args?: { hostId?: string; names?: DependencyName[] }): Promise<SetupInstallResult> =>
       ipcRenderer.invoke('setup:install', args),
-    /** 캐시된 점검 상태 조회. { report, status } 반환 */
-    status: (args?: { hostId?: string }): Promise<unknown> =>
+    /** 캐시된 점검 상태 조회. */
+    status: (args?: { hostId?: string }): Promise<SetupStatusResult> =>
       ipcRenderer.invoke('setup:status', args)
   },
   widget: {
