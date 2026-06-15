@@ -215,9 +215,12 @@ docs/          # 기능 명세: SETUP_SPEC / CONNECTION_SPEC / DATA_SPEC / UI_SP
 위젯이 **실행되는 로컬 OS**와 **SSH로 접속하는 원격 OS**를 구분해 고려합니다.
 
 **로컬(위젯 표시):**
-- **macOS**: 투명/vibrancy 효과, 트레이 동작 확인. 패키징 시 서명/공증 고려.
-- **Windows**: `skipTaskbar`로 작업표시줄 숨김 동작 확인.
-- **Linux**: 투명 창은 합성기(compositor) 의존. 일부 환경에서 투명/always-on-top 제한.
+- **macOS**: 본문 배경은 불투명(가독성), 창 모서리만 투명. 패키징 시 서명/공증 고려(현재 무서명 — Gatekeeper "손상됨"은 `xattr -cr`+`codesign -s -`로 우회).
+- **Windows**: `skipTaskbar`로 작업표시줄 숨김 동작 확인. 무서명 설치파일은 SmartScreen 경고("추가 정보→실행").
+- **Linux**: 투명 창은 합성기(compositor) 의존. AppImage는 실행 권한(`chmod +x`) 필요.
+- **GUI/패키징 실행 시 PATH 주의(macOS/Linux)**: Finder/Dock/패키징 앱은 로그인 셸 PATH를 상속하지 못해
+  Homebrew/nvm의 `node`/`npm`/`ccusage`를 못 찾는다 → `src/main/shellPath.ts`의 `fixGuiPath()`가
+  시작 시 로그인 셸 PATH를 `process.env.PATH`로 복구한다. (`npm run dev`는 터미널 PATH라 정상)
 
 **원격(데이터 조회 대상):**
 - 원격 OS(macOS/Ubuntu/Windows)별로 OS 감지 명령(`uname`/`ver`)과 의존성 설치 명령이
