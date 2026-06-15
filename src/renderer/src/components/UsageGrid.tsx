@@ -3,6 +3,12 @@ import { gridCell, gridState } from '../lib/grid'
 import type { Period, Provider, UsageCell, UsageGrid as Grid } from '../lib/types'
 
 const PROVIDERS: Provider[] = ['claude', 'codex', 'gemini']
+/** 표시용 프로바이더 라벨(대문자 시작) */
+const PROVIDER_LABEL: Record<Provider, string> = {
+  claude: 'Claude',
+  codex: 'Codex',
+  gemini: 'Gemini'
+}
 const PERIODS: Array<{ key: Period; label: string }> = [
   { key: 'daily', label: '일일' },
   { key: 'monthly', label: '월' }
@@ -31,7 +37,7 @@ export function UsageGrid({ grid, expanded }: { grid: Grid | null; expanded: boo
         <span className="rowlabel" />
         {PROVIDERS.map((p) => (
           <span key={p} className="colhead">
-            {p}
+            {PROVIDER_LABEL[p]}
           </span>
         ))}
       </div>
