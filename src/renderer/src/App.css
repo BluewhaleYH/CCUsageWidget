@@ -54,6 +54,10 @@ body {
   font-weight: 600;
   opacity: 0.92;
   padding: 0 4px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav,
@@ -119,6 +123,7 @@ body {
 /* 데이터 그리드 (2행 × 3열 + 라벨 열) */
 .usage-grid {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -129,6 +134,7 @@ body {
   justify-content: center;
   font-size: 12px;
   opacity: 0.6;
+  text-align: center;
 }
 
 .usage-grid.msg.warn {
@@ -143,9 +149,16 @@ body {
   gap: 4px;
 }
 
+/* 데이터 행은 본문 높이를 균등 분배 → 확장 시 셀이 함께 커진다 */
+.grid-row:not(.head) {
+  flex: 1;
+  min-height: 0;
+}
+
 .grid-row.head {
   opacity: 0.6;
   font-size: 10px;
+  flex: 0 0 auto;
 }
 
 .colhead {
@@ -169,6 +182,15 @@ body {
   padding: 6px 2px;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.cell > * {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cell .cost {
@@ -229,6 +251,8 @@ body {
 .modal {
   width: 88%;
   max-width: 320px;
+  max-height: 92vh;
+  overflow-y: auto;
   background: rgba(28, 30, 38, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
