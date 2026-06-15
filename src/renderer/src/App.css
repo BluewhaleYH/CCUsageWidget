@@ -120,17 +120,18 @@ body {
   min-height: 0;
 }
 
-/* 데이터 영역 — 프로바이더 그룹 × [일일/월간] 열의 단일 표. 넘치면 스크롤 */
-.usage {
+/* 데이터 영역 — 2×3 그리드(행=기간, 열=프로바이더). 넉넉한 간격. 넘치면 스크롤 */
+.usage-grid {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding-right: 2px;
 }
 
-.usage-msg {
-  flex: 1;
-  display: flex;
+.usage-grid.msg {
   align-items: center;
   justify-content: center;
   font-size: 15px;
@@ -138,91 +139,116 @@ body {
   text-align: center;
 }
 
-.usage-msg.warn {
+.usage-grid.msg.warn {
   color: #ff9b9b;
   opacity: 0.9;
 }
 
-.usage-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13.5px;
+.grid-row {
+  display: grid;
+  grid-template-columns: 42px 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
 }
 
-/* 상단 일일/월간 헤더(고정) */
-.usage-table thead th {
+.grid-row.head {
   position: sticky;
   top: 0;
   z-index: 1;
   background: #15171c;
-  font-size: 12.5px;
+}
+
+.colhead {
+  text-align: center;
+  font-size: 13px;
   font-weight: 600;
-  opacity: 0.6;
-  padding: 5px 10px;
-  text-align: right;
+  opacity: 0.7;
+  padding: 2px 0 4px;
 }
 
-.usage-table thead th:first-child {
-  text-align: left;
-}
-
-/* 프로바이더 그룹 헤더(이름 + 모델 칩) */
-.pgroup-head td {
-  padding: 11px 10px 5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.pgroup:first-of-type .pgroup-head td {
-  padding-top: 3px;
-}
-
-.pname {
-  font-size: 14.5px;
+.rowlabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   font-weight: 700;
-  margin-right: 7px;
+  opacity: 0.8;
+}
+
+/* 셀 */
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+}
+
+.cell .cost {
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 모델 칩 — 여러 개면 줄바꿈 */
+.cell .models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
 }
 
 .model-chip {
-  display: inline-block;
   font-size: 10.5px;
   line-height: 1.5;
-  padding: 0 6px;
+  padding: 1px 7px;
   border-radius: 6px;
   background: rgba(120, 150, 240, 0.18);
   color: #c7d2fe;
-  margin: 1px 3px 1px 0;
   white-space: nowrap;
 }
 
-/* 지표 행 */
-.usage-table td.k {
-  padding: 3px 10px;
-  opacity: 0.62;
+/* 지표 — 줄 간격 넉넉히 */
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.metric .k {
+  opacity: 0.55;
   white-space: nowrap;
 }
 
-.usage-table td.v {
-  padding: 3px 10px;
-  text-align: right;
+.metric .v {
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  text-align: right;
 }
 
-.usage-table tr.metric:nth-of-type(even) {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.usage-table tr.total td {
+.metric.total {
   font-weight: 700;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+  padding-top: 7px;
 }
 
-.usage-table tr.pnone td {
-  padding: 4px 10px;
+.cell.none {
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   opacity: 0.35;
-}
-
-.v .dim {
-  opacity: 0.3;
+  min-height: 64px;
 }
 
 /* 상태 푸터 */
