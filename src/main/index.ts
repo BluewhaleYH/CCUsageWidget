@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
+import { fixGuiPath } from './shellPath'
 import { DEFAULT_NORMAL_HEIGHT, store, viewHeight } from './store'
 import { usagePoller } from './usage/poller'
 
@@ -70,6 +71,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // GUI/패키징 실행 시 누락되는 로그인 셸 PATH 복구 (node/npm/ccusage 검출) — 최우선
+  fixGuiPath()
+
   electronApp.setAppUserModelId('com.bluewhaleyh.ccusagewidget')
 
   app.on('browser-window-created', (_, window) => {
