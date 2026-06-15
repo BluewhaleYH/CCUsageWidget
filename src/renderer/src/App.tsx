@@ -5,7 +5,13 @@ import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
 import { canSwitch, connDot, currentAlias } from './lib/host'
 import { toggleCollapse, toggleExpand, type View } from './lib/view'
-import type { HostEntry, HostListResult, HostStatusUpdate, UsageGrid as Grid } from './lib/types'
+import type {
+  HostEntry,
+  HostListResult,
+  HostSetupStatus,
+  HostStatusUpdate,
+  UsageGrid as Grid
+} from './lib/types'
 
 /**
  * 위젯 루트. (UI_SPEC §2)
@@ -17,6 +23,7 @@ function App() {
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [setupStatus, setSetupStatus] = useState<HostSetupStatus>('unknown')
 
   const loadHosts = useCallback(async () => {
     const res = (await window.api.host.list()) as HostListResult
@@ -41,6 +48,21 @@ function App() {
     setView(next)
     void window.api.widget.setView(next)
   }, [])
+
+  // 선택 호스트의 의존성 상태 칩: 캐시 즉시 표시 후 신선 점검(로컬은 빠름, 원격은 1회 SSH)
+  useEffect(() => {
+    if (!selectedHostId) return
+    let alive = true
+    void window.api.setup.status({ hostId: selectedHostId }).then((r) => {
+      if (alive) setSetupStatus(r.status)
+    })
+    void window.api.setup.check({ hostId: selectedHostId }).then((r) => {
+      if (alive) setSetupStatus(r.status)
+    })
+    return () => {
+      alive = false
+    }
+  }, [selectedHostId])
 
   // 호스트 목록 로드 + 연결 상태 푸시 구독
   useEffect(() => {
@@ -84,7 +106,7 @@ function App() {
           <main className="body">
             <UsageGrid grid={grid} expanded={view === 'expanded'} />
           </main>
-          <StatusBar grid={grid} />
+          <StatusBar grid={grid} setupStatus={setupStatus} />
         </>
       )}
 
