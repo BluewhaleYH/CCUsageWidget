@@ -39,15 +39,19 @@ SSH 연결·호스트 선택은 `CONNECTION_SPEC.md`, 화면 배치는 `UI_SPEC.
 interface UsageCell {
   provider: 'claude' | 'codex' | 'gemini';
   period: 'daily' | 'monthly';
-  present: boolean;          // 데이터 존재 여부 (false → "없음")
-  cost: number;              // 총 비용(USD)
+  present: boolean;            // 데이터 존재 여부 (false → "없음")
+  cost: number;                // 총 비용(USD)
   inputTokens: number;
   outputTokens: number;
+  cacheCreationTokens: number; // 캐시 생성 토큰
+  cacheReadTokens: number;     // 캐시 읽기 토큰
   totalTokens: number;
+  modelsUsed: string[];        // 사용 모델 목록
 }
 ```
-- daily는 "오늘" 항목, monthly는 "이번 달" 항목을 대표값으로 추출(없으면 합계/최근값 규칙 정의).
-- 데이터가 비어있으면 `present=false`.
+- daily는 "오늘"(가장 최근) 항목, monthly는 "이번 달"(가장 최근) 항목을 대표값으로 추출. 비어있으면 `present=false`.
+- 비용 키는 버전/프로바이더에 따라 `totalCost`/`costUSD`(codex)/`cost` 중 하나 — 방어적으로 처리.
+  항목 날짜 키는 `period`(실측). `modelsUsed`가 없으면 `modelBreakdowns[].modelName`에서 폴백.
 
 ### 2.3 30초 폴링
 - 메인 프로세스에서 `setInterval` 30초 주기로 **현재 선택된 호스트**만 조회.(TEMP L25)
@@ -61,15 +65,17 @@ interface UsageCell {
 - 결과적으로 **2행 × 3열 그리드**:
 
 ```
-            claude        codex         gemini
+            Claude        Codex         Gemini
  ┌────────┬────────────┬────────────┬────────────┐
- │ 일일   │ $/토큰      │ $/토큰      │ $/토큰      │
+ │ 일일   │ 전체 항목   │ 전체 항목   │ 전체 항목   │
  ├────────┼────────────┼────────────┼────────────┤
- │ 월     │ $/토큰      │ $/토큰      │ $/토큰      │
+ │ 월     │ 전체 항목   │ 전체 항목   │ 전체 항목   │
  └────────┴────────────┴────────────┴────────────┘
 ```
-- **각 셀 표시(확정: 비용 + 토큰 모두)**: 총 비용($)을 메인으로, 토큰 수(총 토큰 또는
-  input/output)를 보조로 표시.
+- **각 셀 표시(확정: ccusage 전체 항목)**: 비용($)을 메인으로, 그 아래 **모델 목록** + 토큰 세부
+  (Input / Output / Cache Create / Cache Read / **Total**)를 천 단위 콤마로 표시.
+- 항목이 많아 데이터 영역은 **내용 높이에 맞추고, 넘치면 세로 스크롤**한다(헤더 행은 sticky).
+  열 헤더 프로바이더 라벨은 대문자 시작(Claude/Codex/Gemini).
 
 ### 2.5 상태별 표시
 - **데이터 없음**(`present=false`): 해당 셀에 **"없음"** 표시 (TEMP L27)
