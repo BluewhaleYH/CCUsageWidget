@@ -69,6 +69,14 @@ export class SshCommandRunner implements CommandRunner {
           this.connecting = null
           reject(err)
         })
+        // 연결이 끊기면 다음 호출이 자동 재연결하도록 상태를 리셋한다(끊긴 채 멈춤 방지).
+        .on('close', () => {
+          if (this.client === client) {
+            this.client = null
+            this.pathProbed = false
+            this.remotePath = null
+          }
+        })
         .connect(connectConfig)
     })
     return this.connecting
