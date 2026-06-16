@@ -20,6 +20,8 @@ class UsagePoller {
   private timer: ReturnType<typeof setTimeout> | null = null
   private getWindow: GetWindow = () => null
   private polling = false
+  /** 폴 진행 중 들어온 재갱신 요청 — 현재 폴이 끝나면 새 호스트로 재폴한다. */
+  private pending = false
   /** 직전 결과 — 로딩 중 깜빡임 방지를 위해 셀을 유지한다. */
   private lastGrid: UsageGrid | null = null
 
@@ -51,39 +53,55 @@ class UsagePoller {
     }, POLL_INTERVAL_MS)
   }
 
-  /** 1회 조회 → usage:update 푸시 + 연결 상태(lastStatus) 갱신·푸시. 중복 폴링은 무시. */
+  /**
+   * 1회 조회 → usage:update 푸시 + 연결 상태(lastStatus) 갱신·푸시.
+   * - 이미 폴 진행 중이면 `pending`만 세우고 종료 → 현재 폴이 끝난 뒤 새 호스트로 **재폴**.
+   * - 폴 도중 선택 호스트가 바뀌면 그 결과는 **stale로 폐기**(이전 호스트 데이터 잔상 방지).
+   */
   async poll(): Promise<void> {
-    if (this.polling) return
+    if (this.polling) {
+      this.pending = true
+      return
+    }
     this.polling = true
     try {
-      const host = getSelectedHost() ?? null
+      do {
+        this.pending = false
+        const host = getSelectedHost() ?? null
 
-      // 호스트 없음: 즉시 ready 그리드(연결 안됨/빈 셀)
-      if (!host) {
-        this.push(this.noHostGrid(), null)
-        return
-      }
-
-      // 1) 로딩 상태 푸시(이전 셀 유지 → 깜빡임 방지)
-      this.send('usage:update', this.loadingGrid(host))
-
-      // 2) 조회 → ready, 예외 → error
-      const now = new Date().toISOString()
-      let grid: UsageGrid
-      try {
-        grid = await this.fetch(host, now)
-      } catch (err) {
-        grid = {
-          hostId: host.id,
-          hostAlias: host.alias,
-          updatedAt: now,
-          status: 'error',
-          connection: 'disconnected',
-          cells: this.lastGrid?.hostId === host.id ? (this.lastGrid?.cells ?? []) : [],
-          error: err instanceof Error ? err.message : String(err)
+        // 호스트 없음: 즉시 ready 그리드(연결 안됨/빈 셀)
+        if (!host) {
+          this.push(this.noHostGrid(), null)
+          continue
         }
-      }
-      this.push(grid, host)
+
+        // 1) 로딩 상태 푸시(같은 호스트면 셀 유지 → 깜빡임 방지, 다른 호스트면 빈 셀)
+        this.send('usage:update', this.loadingGrid(host))
+
+        // 2) 조회 → ready, 예외 → error
+        const now = new Date().toISOString()
+        let grid: UsageGrid
+        try {
+          grid = await this.fetch(host, now)
+        } catch (err) {
+          grid = {
+            hostId: host.id,
+            hostAlias: host.alias,
+            updatedAt: now,
+            status: 'error',
+            connection: 'disconnected',
+            cells: this.lastGrid?.hostId === host.id ? (this.lastGrid?.cells ?? []) : [],
+            error: err instanceof Error ? err.message : String(err)
+          }
+        }
+
+        // 폴 도중 호스트가 바뀌었으면 이 결과는 stale → 폐기하고 새 호스트로 재폴
+        if (getSelectedHost()?.id !== host.id) {
+          this.pending = true
+          continue
+        }
+        this.push(grid, host)
+      } while (this.pending)
     } finally {
       this.polling = false
     }
