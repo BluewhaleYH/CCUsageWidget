@@ -34,7 +34,17 @@ SSH 연결·호스트 선택은 `CONNECTION_SPEC.md`, 화면 배치는 `UI_SPEC.
 - 6회 호출은 가능한 한 묶어서(병렬/단일 SSH 세션 재사용) 부하·지연 최소화
 
 ### 2.2 JSON 파싱·정규화
-- ccusage 버전에 따라 키가 다를 수 있어 **방어적 파싱**.
+- ccusage 20.x는 **에이전트별 어댑터마다 JSON 구조가 다르다**(Rust 소스 확인). 방어적 파싱 필수:
+
+| 에이전트 | 비용 키 | 모델 표현 | 토큰 특이사항 |
+|---------|--------|----------|--------------|
+| claude | `totalCost` | `modelsUsed`(문자열 배열) + `modelBreakdowns[].modelName` | 표준 |
+| gemini(opencode) | `totalCost` | `modelsUsed`(문자열 배열) | 표준 |
+| codex | `costUSD` | **`models` 객체 맵** `{"gpt-5-codex":{…}}` (키=모델명) | `inputTokens`=비캐시 입력, `cacheReadTokens`=캐시 입력, `reasoningOutputTokens` 별도(출력에 합산) |
+
+> ⚠️ codex는 `modelsUsed`/`modelBreakdowns`가 없고 `models` **객체 맵**으로만 모델을 준다.
+> 파서는 `modelsUsed`(배열) / `models`(맵·배열) / `modelBreakdowns`를 **모두** 보고 모델을 추출한다.
+
 - 공통 모델로 정규화:
 
 ```ts
