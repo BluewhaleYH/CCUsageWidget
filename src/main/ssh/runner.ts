@@ -36,6 +36,10 @@ const SSH_CONNECT_FAILURE_CODE = 255
 export class SshCommandRunner implements CommandRunner {
   private client: Client | null = null
   private connecting: Promise<void> | null = null
+  /** 원격 로그인 셸 PATH(1회 조회 캐시). null = 미조회/조회 실패(프리픽스 미적용). */
+  private remotePath: string | null = null
+  /** PATH 조회를 시도했는지(실패해도 재시도 안 함). */
+  private pathProbed = false
 
   constructor(private readonly config: SshConnectConfig) {}
 
@@ -80,7 +84,35 @@ export class SshCommandRunner implements CommandRunner {
         stderr: err instanceof Error ? err.message : String(err)
       }
     }
-    return this.exec(command)
+    await this.ensureRemotePath()
+    return this.exec(this.withPath(command))
+  }
+
+  /**
+   * 원격 로그인 셸 PATH를 1회 조회해 캐시한다. (GUI의 fixGuiPath와 동일 개념의 원격판)
+   * `client.exec`는 **비로그인 비대화형 셸**이라 Homebrew/nvm/npm 전역 bin이 PATH에 없어
+   * `ccusage`/`node`가 미검출된다. 로그인 셸로 PATH를 받아 이후 명령에 프리픽스로 주입한다.
+   * 조회 실패(Windows 등)면 프리픽스 없이 원본 실행(안전 폴백).
+   */
+  private async ensureRemotePath(): Promise<void> {
+    if (this.pathProbed) return
+    this.pathProbed = true
+    try {
+      const res = await this.exec(`\${SHELL:-/bin/sh} -lc 'printf %s "$PATH"'`)
+      const path = res.stdout.trim()
+      // 유닉스 PATH처럼 보일 때만 사용(콜론 구분 절대경로). 그 외(Windows/실패)는 폴백.
+      if (res.code === 0 && path.includes('/')) this.remotePath = path
+    } catch {
+      // 폴백: 프리픽스 미적용
+    }
+  }
+
+  /** 원격 PATH가 조회됐으면 명령 앞에 PATH 프리픽스를 붙인다. */
+  private withPath(command: string): string {
+    if (!this.remotePath) return command
+    // 단일따옴표 이스케이프('→'\''), 로그인 PATH를 앞에 둬 우선 검색.
+    const escaped = this.remotePath.replace(/'/g, `'\\''`)
+    return `PATH='${escaped}':"$PATH" ${command}`
   }
 
   /** 연결된 클라이언트에서 명령을 실행하고 결과를 모은다. */

@@ -43,6 +43,11 @@ type SshAuth =
 
 ### 3.1 SSH 라이브러리
 - 메인 프로세스에서 `ssh2`(Node) 사용. 키/비밀번호 인증, 원격 명령 실행 지원.
+- **원격 PATH 복구**: `ssh2`의 `exec`는 **비로그인 비대화형 셸**이라 원격 로그인
+  PATH(Homebrew/nvm/npm 전역 bin)를 상속받지 못해 `node`/`ccusage`가 미검출된다.
+  연결 직후 로그인 셸로 PATH를 1회 조회(`${SHELL:-/bin/sh} -lc 'printf %s "$PATH"'`)해
+  캐시하고, 이후 모든 명령을 `PATH='<원격PATH>':"$PATH" <command>`로 실행한다.
+  조회 실패(Windows 등)면 프리픽스 없이 원본 실행(안전 폴백). 로컬 GUI의 `fixGuiPath`와 같은 개념.
 
 ### 3.2 IP 등록 플로우 (플러스 버튼)
 1. UI에서 입력 폼 표시: host, port, username, 인증 방식(키 경로 또는 비밀번호), alias(선택)
