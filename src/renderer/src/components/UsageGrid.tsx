@@ -41,20 +41,29 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
     return <div className="usage-grid msg warn">오류: {grid?.error ?? '조회 실패'}</div>
 
   const g = grid as Grid
+  // 데이터가 전혀 없는 에이전트(열)는 숨긴다 — 일일·월간 모두 없으면 제외.
+  const providers = PROVIDERS.filter((p) =>
+    PERIODS.some(({ key }) => gridCell(g, p, key)?.present)
+  )
+  if (providers.length === 0)
+    return <div className="usage-grid msg">표시할 데이터 없음</div>
+
+  // 표시 열 수에 맞춰 컬럼 너비(라벨 + 프로바이더 N개)를 동적으로 설정.
+  const cols = { gridTemplateColumns: `42px ${'1fr '.repeat(providers.length).trim()}` }
   return (
     <div className="usage-grid">
-      <div className="grid-row head">
+      <div className="grid-row head" style={cols}>
         <span className="rowlabel" />
-        {PROVIDERS.map((p) => (
+        {providers.map((p) => (
           <span key={p} className="colhead">
             {PROVIDER_LABEL[p]}
           </span>
         ))}
       </div>
       {PERIODS.map(({ key, label }) => (
-        <div key={key} className="grid-row">
+        <div key={key} className="grid-row" style={cols}>
           <span className="rowlabel">{label}</span>
-          {PROVIDERS.map((p) => (
+          {providers.map((p) => (
             <Cell key={p} cell={gridCell(g, p, key)} />
           ))}
         </div>
