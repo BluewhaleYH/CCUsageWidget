@@ -3,9 +3,15 @@ import type { Period, Provider, UsageCell } from './types'
 /**
  * ccusage `--json` 출력을 방어적으로 파싱해 `UsageCell`로 정규화한다. (DATA_SPEC §2.2)
  *
- * ccusage 버전/프로바이더에 따라 키가 다르므로 견고하게 처리한다(실측 기준):
+ * ccusage 20.x는 에이전트별 어댑터마다 JSON 구조가 다르다(Rust 소스 확인):
+ * - **claude**: `modelsUsed`(배열) + `modelBreakdowns[].modelName`, 비용 `totalCost`.
+ * - **gemini**(opencode): `modelsUsed`(배열), 비용 `totalCost`.
+ * - **codex**: 모델이 **`models` 객체 맵**(`{"gpt-5-codex":{...}}`), 비용 `costUSD`,
+ *   `inputTokens`=비캐시 입력·`cacheReadTokens`=캐시입력·`reasoningOutputTokens` 별도.
+ *
+ * 공통 처리(실측 기준):
  * - 배열 키: `daily`/`monthly`(= period) 우선, 없으면 `data`.
- * - 항목 비용 키: `totalCost` / `costUSD`(codex) / `cost`.
+ * - 비용 키: `totalCost` / `costUSD`(codex) / `cost`.
  * - 대표값: **최근(마지막) 항목** = 오늘/이번달 (ccusage는 기간 오름차순 반환).
  * - 빈 배열 또는 JSON 파싱 실패 → `present:false`(zeros).
  */
@@ -27,7 +33,10 @@ export function parseUsage(provider: Provider, period: Period, raw: string): Usa
   if (!isRecord(item)) return empty
 
   const inputTokens = num(item.inputTokens)
-  const outputTokens = num(item.outputTokens)
+  // codex는 추론 토큰을 outputTokens와 분리(reasoningOutputTokens)하므로 출력에 합산해 합계 정합.
+  const outputTokens = num(item.outputTokens) + num(item.reasoningOutputTokens)
+  const cacheCreationTokens = num(item.cacheCreationTokens)
+  const cacheReadTokens = num(item.cacheReadTokens)
   return {
     provider,
     period,
@@ -35,24 +44,40 @@ export function parseUsage(provider: Provider, period: Period, raw: string): Usa
     cost: num(item.totalCost ?? item.costUSD ?? item.cost),
     inputTokens,
     outputTokens,
-    cacheCreationTokens: num(item.cacheCreationTokens),
-    cacheReadTokens: num(item.cacheReadTokens),
-    totalTokens: num(item.totalTokens) || inputTokens + outputTokens,
+    cacheCreationTokens,
+    cacheReadTokens,
+    totalTokens:
+      num(item.totalTokens) ||
+      inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens,
     modelsUsed: parseModels(item)
   }
 }
 
-/** modelsUsed(문자열 배열) 또는 modelBreakdowns[].modelName에서 모델 목록 추출 */
+/**
+ * 항목에서 사용 모델 목록을 추출한다(에이전트별 구조 모두 지원, 순서 유지·중복 제거).
+ * - `modelsUsed`: 문자열 배열 (claude, gemini)
+ * - `models`: **객체 맵**(키=모델명, codex) 또는 문자열/객체 배열
+ * - `modelBreakdowns`/`modelBreakdown`/`breakdowns`: 객체 배열의 modelName/model/name/id (claude)
+ */
 function parseModels(item: Record<string, unknown>): string[] {
-  const direct = item.modelsUsed
-  if (Array.isArray(direct)) return direct.filter((m): m is string => typeof m === 'string')
-  const breakdowns = item.modelBreakdowns
-  if (Array.isArray(breakdowns)) {
-    return breakdowns
-      .map((b) => (isRecord(b) && typeof b.modelName === 'string' ? b.modelName : null))
-      .filter((m): m is string => m !== null)
+  const out: string[] = []
+  const push = (m: unknown): void => {
+    if (typeof m === 'string' && m.length > 0 && !out.includes(m)) out.push(m)
   }
-  return []
+  const fromObj = (o: Record<string, unknown>): unknown => o.modelName ?? o.model ?? o.name ?? o.id
+
+  if (Array.isArray(item.modelsUsed)) item.modelsUsed.forEach(push)
+
+  const models = item.models
+  if (isRecord(models)) Object.keys(models).forEach(push) // codex: 맵의 키 = 모델명
+  else if (Array.isArray(models))
+    models.forEach((m) => push(isRecord(m) ? fromObj(m) : m))
+
+  for (const key of ['modelBreakdowns', 'modelBreakdown', 'breakdowns'] as const) {
+    const b = item[key]
+    if (Array.isArray(b)) b.forEach((x) => isRecord(x) && push(fromObj(x)))
+  }
+  return out
 }
 
 /** period(daily/monthly) → 없으면 data → 그 외 첫 배열 필드를 찾는다. */
