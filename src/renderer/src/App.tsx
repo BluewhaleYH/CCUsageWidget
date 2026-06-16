@@ -105,8 +105,9 @@ function App() {
 
   const switchHost = useCallback(
     async (direction: 'prev' | 'next') => {
+      setGrid(null) // 즉시 이전 호스트 데이터 클리어(혼동 방지). 새 데이터는 host:switch 폴링이 푸시
       await window.api.host.switch(direction)
-      await loadHosts() // 선택 변경 반영 (그리드는 host:switch가 즉시 갱신 푸시)
+      await loadHosts() // 선택 변경 반영
     },
     [loadHosts]
   )

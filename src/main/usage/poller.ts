@@ -79,7 +79,7 @@ class UsagePoller {
           updatedAt: now,
           status: 'error',
           connection: 'disconnected',
-          cells: this.lastGrid?.cells ?? [],
+          cells: this.lastGrid?.hostId === host.id ? (this.lastGrid?.cells ?? []) : [],
           error: err instanceof Error ? err.message : String(err)
         }
       }
@@ -117,13 +117,16 @@ class UsagePoller {
   }
 
   private loadingGrid(host: HostEntry): UsageGrid {
+    // 직전 결과가 같은 호스트일 때만 셀 재사용(깜빡임 방지).
+    // 다른 호스트면 이전 데이터가 보이지 않도록 빈 셀로 시작한다.
+    const sameHost = this.lastGrid?.hostId === host.id
     return {
       hostId: host.id,
       hostAlias: host.alias,
-      updatedAt: this.lastGrid?.updatedAt ?? new Date().toISOString(),
+      updatedAt: sameHost ? (this.lastGrid?.updatedAt ?? new Date().toISOString()) : new Date().toISOString(),
       status: 'loading',
-      connection: this.lastGrid?.connection ?? 'connected',
-      cells: this.lastGrid?.cells ?? []
+      connection: sameHost ? (this.lastGrid?.connection ?? 'connected') : 'connected',
+      cells: sameHost ? (this.lastGrid?.cells ?? []) : []
     }
   }
 
