@@ -23,9 +23,11 @@ SSH 연결·호스트 선택은 `CONNECTION_SPEC.md`, 화면 배치는 `UI_SPEC.
 
 | 프로바이더 | daily | monthly |
 |-----------|-------|---------|
-| claude | `ccusage daily --json` | `ccusage monthly --json` |
+| claude | `ccusage claude daily --json` | `ccusage claude monthly --json` |
 | codex | `ccusage codex daily --json` | `ccusage codex monthly --json` |
 | gemini | `ccusage gemini daily --json` | `ccusage gemini monthly --json` |
+
+> ⚠️ 서브커맨드 없는 `ccusage daily`는 **전체 에이전트 집계**(claude 칸에 codex/gemini가 섞임). 반드시 프로바이더 서브커맨드(`claude`/`codex`/`gemini`)를 명시한다.
 
 - ccusage 미설치 시 `npx ccusage@latest <args>` 폴백 (SETUP_SPEC 참조)
 - 각 호출은 독립적으로 성공/실패 처리(한 프로바이더 실패가 전체를 막지 않음)
