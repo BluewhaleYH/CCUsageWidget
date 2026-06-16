@@ -22,7 +22,12 @@ import {
   type RegisterHostInput,
   type SwitchDirection
 } from './hosts'
-import { createRunnerForHost, DEFAULT_HOST_ID, disposeRunner } from './runnerFactory'
+import {
+  createRunnerForHost,
+  DEFAULT_HOST_ID,
+  disposeRunner,
+  invalidateRunner
+} from './runnerFactory'
 import {
   COLLAPSED_HEIGHT,
   MAX_WIDTH,
@@ -162,10 +167,17 @@ export function registerIpc(_getWindow: GetWindow): void {
     (
       _e,
       args: { id: string; patch: Partial<Omit<HostEntry, 'id'>>; secret?: string }
-    ): HostEntry | undefined => editHost(args.id, args.patch, args.secret)
+    ): HostEntry | undefined => {
+      // 주소/자격증명이 바뀌었을 수 있으니 캐시된 SSH 연결을 무효화(다음 호출이 재연결).
+      invalidateRunner(args.id)
+      return editHost(args.id, args.patch, args.secret)
+    }
   )
 
-  ipcMain.handle('host:remove', (_e, args: { id: string }) => deleteHost(args.id))
+  ipcMain.handle('host:remove', (_e, args: { id: string }) => {
+    invalidateRunner(args.id)
+    return deleteHost(args.id)
+  })
 
   // host:status 는 푸시 채널(메인→렌더러). 실제 푸시는 Phase 3의 30초 폴링에서 sendHostStatus로 수행.
 

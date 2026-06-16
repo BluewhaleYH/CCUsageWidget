@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
+import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
 import { clampWidth, DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH, store, viewHeight } from './store'
 import { usagePoller } from './usage/poller'
@@ -94,4 +95,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+// 종료 시 캐시된 SSH 연결 정리
+app.on('will-quit', () => {
+  disposeAllRunners()
 })
