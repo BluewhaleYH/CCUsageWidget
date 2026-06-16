@@ -19,6 +19,17 @@ export function gridState(grid: UsageGrid | null): GridDisplayState {
   return 'ready'
 }
 
+/** 표시 순서 고정(Claude/Codex/Gemini). */
+const PROVIDER_ORDER: Provider[] = ['claude', 'codex', 'gemini']
+
+/**
+ * 데이터가 하나라도 있는(어느 기간이든 present) 프로바이더만 표시 순서대로 반환한다.
+ * 데이터 없는 에이전트(열)는 숨기므로, 이 목록으로 그리드 열·창 너비를 결정한다.
+ */
+export function visibleProviders(grid: UsageGrid): Provider[] {
+  return PROVIDER_ORDER.filter((p) => grid.cells.some((c) => c.provider === p && c.present))
+}
+
 /** 그리드에서 (provider, period) 셀을 찾는다. */
 export function gridCell(
   grid: UsageGrid,

@@ -4,7 +4,9 @@ import { HostFormModal } from './components/HostFormModal'
 import { SetupPanel } from './components/SetupPanel'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
+import { visibleProviders } from './lib/grid'
 import { canSwitch, connDot, currentAlias } from './lib/host'
+import { contentWidth } from './lib/layout'
 import { maximize, toggleCollapse, type View } from './lib/view'
 import type {
   HostEntry,
@@ -72,6 +74,14 @@ function App() {
     const data = root.querySelector('.usage-grid, .usage-msg')
     if (data) ro.observe(data)
     return () => ro.disconnect()
+  }, [grid, view])
+
+  // 표시 에이전트 수에 맞춰 창 너비를 맞춘다(에이전트 칸 320px 고정). 데이터 없거나 접힘이면 유지.
+  useEffect(() => {
+    if (view === 'collapsed' || !grid) return
+    const n = visibleProviders(grid).length
+    if (n === 0) return
+    void window.api.widget.fitWidth(contentWidth(n))
   }, [grid, view])
 
   // 선택 호스트의 의존성 상태 칩: 캐시 즉시 표시 후 신선 점검(로컬은 빠름, 원격은 1회 SSH)

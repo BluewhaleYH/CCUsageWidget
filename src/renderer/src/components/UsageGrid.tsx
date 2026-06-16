@@ -1,8 +1,8 @@
 import { formatCost, formatNumber, formatTokens } from '../lib/format'
-import { gridCell, gridState } from '../lib/grid'
+import { gridCell, gridState, visibleProviders } from '../lib/grid'
+import { AGENT_WIDTH, LABEL_WIDTH } from '../lib/layout'
 import type { Period, Provider, UsageCell, UsageGrid as Grid } from '../lib/types'
 
-const PROVIDERS: Provider[] = ['claude', 'codex', 'gemini']
 const PROVIDER_LABEL: Record<Provider, string> = {
   claude: 'Claude',
   codex: 'Codex',
@@ -41,15 +41,15 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
     return <div className="usage-grid msg warn">오류: {grid?.error ?? '조회 실패'}</div>
 
   const g = grid as Grid
-  // 데이터가 전혀 없는 에이전트(열)는 숨긴다 — 일일·월간 모두 없으면 제외.
-  const providers = PROVIDERS.filter((p) =>
-    PERIODS.some(({ key }) => gridCell(g, p, key)?.present)
-  )
+  // 데이터가 전혀 없는 에이전트(열)는 숨긴다 — 어느 기간이든 데이터 있으면 표시.
+  const providers = visibleProviders(g)
   if (providers.length === 0)
     return <div className="usage-grid msg">표시할 데이터 없음</div>
 
-  // 표시 열 수에 맞춰 컬럼 너비(라벨 + 프로바이더 N개)를 동적으로 설정.
-  const cols = { gridTemplateColumns: `42px ${'1fr '.repeat(providers.length).trim()}` }
+  // 에이전트 칸은 320px 고정 — 라벨(42px) + 프로바이더 N개. 창 너비는 이 콘텐츠에 맞춤(App).
+  const cols = {
+    gridTemplateColumns: `${LABEL_WIDTH}px ${`${AGENT_WIDTH}px `.repeat(providers.length).trim()}`
+  }
   return (
     <div className="usage-grid">
       <div className="grid-row head" style={cols}>
