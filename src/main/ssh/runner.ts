@@ -38,8 +38,8 @@ export class SshCommandRunner implements CommandRunner {
   private connecting: Promise<void> | null = null
   /** 원격 로그인 셸 PATH(1회 조회 캐시). null = 미조회/조회 실패(프리픽스 미적용). */
   private remotePath: string | null = null
-  /** PATH 조회를 시도했는지(실패해도 재시도 안 함). */
-  private pathProbed = false
+  /** PATH 조회 공유 Promise — 병렬 호출이 같은 조회 1회를 await(경쟁 방지). */
+  private pathProbe: Promise<void> | null = null
 
   constructor(private readonly config: SshConnectConfig) {}
 
@@ -73,7 +73,7 @@ export class SshCommandRunner implements CommandRunner {
         .on('close', () => {
           if (this.client === client) {
             this.client = null
-            this.pathProbed = false
+            this.pathProbe = null
             this.remotePath = null
           }
         })
@@ -101,18 +101,24 @@ export class SshCommandRunner implements CommandRunner {
    * `client.exec`는 **비로그인 비대화형 셸**이라 Homebrew/nvm/npm 전역 bin이 PATH에 없어
    * `ccusage`/`node`가 미검출된다. 로그인 셸로 PATH를 받아 이후 명령에 프리픽스로 주입한다.
    * 조회 실패(Windows 등)면 프리픽스 없이 원본 실행(안전 폴백).
+   *
+   * **공유 Promise**로 캐싱 — 6종 호출이 동시에 진입해도 조회는 1회만 하고 모두 같은
+   * 결과를 await한다(과거: 동기 플래그라 첫 호출만 조회하고 나머지는 프리픽스 없이 실행 →
+   * ccusage 미검출 → npx 폴백으로 매우 느렸음).
    */
-  private async ensureRemotePath(): Promise<void> {
-    if (this.pathProbed) return
-    this.pathProbed = true
-    try {
-      const res = await this.exec(`\${SHELL:-/bin/sh} -lc 'printf %s "$PATH"'`)
-      const path = res.stdout.trim()
-      // 유닉스 PATH처럼 보일 때만 사용(콜론 구분 절대경로). 그 외(Windows/실패)는 폴백.
-      if (res.code === 0 && path.includes('/')) this.remotePath = path
-    } catch {
-      // 폴백: 프리픽스 미적용
-    }
+  private ensureRemotePath(): Promise<void> {
+    if (this.pathProbe) return this.pathProbe
+    this.pathProbe = (async () => {
+      try {
+        const res = await this.exec(`\${SHELL:-/bin/sh} -lc 'printf %s "$PATH"'`)
+        const path = res.stdout.trim()
+        // 유닉스 PATH처럼 보일 때만 사용(콜론 구분 절대경로). 그 외(Windows/실패)는 폴백.
+        if (res.code === 0 && path.includes('/')) this.remotePath = path
+      } catch {
+        // 폴백: 프리픽스 미적용
+      }
+    })()
+    return this.pathProbe
   }
 
   /** 원격 PATH가 조회됐으면 명령 앞에 PATH 프리픽스를 붙인다. */
