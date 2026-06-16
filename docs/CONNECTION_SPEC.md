@@ -45,8 +45,12 @@ type SshAuth =
 - 메인 프로세스에서 `ssh2`(Node) 사용. 키/비밀번호 인증, 원격 명령 실행 지원.
 - **원격 PATH 복구**: `ssh2`의 `exec`는 **비로그인 비대화형 셸**이라 원격 로그인
   PATH(Homebrew/nvm/npm 전역 bin)를 상속받지 못해 `node`/`ccusage`가 미검출된다.
-  연결 직후 로그인 셸로 PATH를 1회 조회(`${SHELL:-/bin/sh} -lc 'printf %s "$PATH"'`)해
+  연결 직후 **로그인+인터랙티브 셸**로 PATH를 1회 조회
+  (`${SHELL:-/bin/sh} -lic 'printf "__PS__%s__PE__" "$PATH"'`, 마커로 rc 부수 출력과 분리)해
   캐시하고, 이후 모든 명령을 `PATH='<원격PATH>':"$PATH" <command>`로 실행한다.
+  > ⚠️ **인터랙티브(-i) 필수**: nvm은 `.zshrc`/`.bashrc`(인터랙티브 rc)에 설정되므로 `-l`만으로는
+  > nvm이 로드되지 않아 시스템 node가 잡혀 **버전이 오검출**된다. 로컬 `fixGuiPath`와 동일하게 `-lic` 사용.
+
   조회 실패(Windows 등)면 프리픽스 없이 원본 실행(안전 폴백). 로컬 GUI의 `fixGuiPath`와 같은 개념.
 
 ### 3.2 IP 등록 플로우 (플러스 버튼)

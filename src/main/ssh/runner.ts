@@ -110,8 +110,12 @@ export class SshCommandRunner implements CommandRunner {
     if (this.pathProbe) return this.pathProbe
     this.pathProbe = (async () => {
       try {
-        const res = await this.exec(`\${SHELL:-/bin/sh} -lc 'printf %s "$PATH"'`)
-        const path = res.stdout.trim()
+        // 로그인(-l) + 인터랙티브(-i) 셸 — nvm(.zshrc/.bashrc)·Homebrew(.zprofile) PATH 모두 커버.
+        // (-l만 쓰면 nvm 미로드 → 시스템 node가 잡혀 버전 오검출). 마커로 rc 부수 출력과 PATH 분리.
+        const res = await this.exec(
+          `\${SHELL:-/bin/sh} -lic 'printf "__PS__%s__PE__" "$PATH"'`
+        )
+        const path = res.stdout.match(/__PS__([\s\S]*?)__PE__/)?.[1]?.trim() ?? ''
         // 유닉스 PATH처럼 보일 때만 사용(콜론 구분 절대경로). 그 외(Windows/실패)는 폴백.
         if (res.code === 0 && path.includes('/')) this.remotePath = path
       } catch {
