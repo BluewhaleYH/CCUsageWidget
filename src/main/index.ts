@@ -5,6 +5,7 @@ import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
+import { sizer } from './sizing'
 import { applyTaskbarVisibility } from './taskbar'
 import { clampWidth, DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH, store, viewHeight } from './store'
 import { usagePoller } from './usage/poller'
@@ -15,6 +16,8 @@ function createWindow(): void {
   const bounds = store.get('windowBounds')
   const view = store.get('view') ?? 'normal'
   const height = viewHeight(view)
+  // 크기 잠금 관리자 초기화(복원된 뷰/너비). 이후 너비는 렌더러 fitWidth가 콘텐츠에 맞춰 조정.
+  sizer.init(view, bounds?.width ?? DEFAULT_WIDTH)
 
   mainWindow = new BrowserWindow({
     width: clampWidth(bounds?.width ?? DEFAULT_WIDTH),

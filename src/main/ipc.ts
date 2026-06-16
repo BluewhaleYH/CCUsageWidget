@@ -28,17 +28,8 @@ import {
   disposeRunner,
   invalidateRunner
 } from './runnerFactory'
-import {
-  COLLAPSED_HEIGHT,
-  MAX_WIDTH,
-  MIN_WIDTH,
-  SHOWN_HEIGHT,
-  SHOWN_MAX,
-  SHOWN_MIN,
-  store,
-  viewHeight,
-  type WidgetView
-} from './store'
+import { sizer } from './sizing'
+import { store, type WidgetView } from './store'
 import { applyTaskbarVisibility } from './taskbar'
 import { usagePoller } from './usage/poller'
 
@@ -53,19 +44,12 @@ type GetWindow = () => BrowserWindow | null
  */
 export function registerIpc(_getWindow: GetWindow): void {
   // --- widget 제어 (UI_SPEC §3.4~3.5) ---
-  // 접기(헤더만)/펼침(데이터 표시 고정 높이)로 리사이즈 + view 영속화. 너비는 유지.
+  // 접기(헤더만)/펼침(데이터 표시)로 리사이즈 + view 영속화. 크기 잠금은 WindowSizer가 관리.
   ipcMain.handle('widget:setView', (e, view: WidgetView) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
-    const h = viewHeight(view)
-    const b = win.getBounds()
-    // 높이 고정 제약을 잠시 풀고 리사이즈 후 새 뷰 높이에 다시 고정(드래그 불가, 너비만 조정).
-    win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
-    win.setMaximumSize(MAX_WIDTH, SHOWN_HEIGHT)
-    win.setBounds({ x: b.x, y: b.y, width: b.width, height: h })
-    win.setMinimumSize(MIN_WIDTH, h)
-    win.setMaximumSize(MAX_WIDTH, h)
     store.set('view', view)
+    sizer.setView(win, view)
     // 최소화 상태에서만 작업표시줄/Dock에 노출
     applyTaskbarVisibility(win, view)
   })
@@ -75,15 +59,14 @@ export function registerIpc(_getWindow: GetWindow): void {
   ipcMain.handle('widget:fitHeight', (e, height: number) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
-    if ((store.get('view') ?? 'normal') !== 'normal') return
-    const h = Math.max(SHOWN_MIN, Math.min(SHOWN_MAX, Math.round(height)))
-    const b = win.getBounds()
-    if (b.height === h) return
-    win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
-    win.setMaximumSize(MAX_WIDTH, SHOWN_MAX)
-    win.setBounds({ x: b.x, y: b.y, width: b.width, height: h })
-    win.setMinimumSize(MIN_WIDTH, h)
-    win.setMaximumSize(MAX_WIDTH, h)
+    sizer.fitHeight(win, height)
+  })
+
+  // 콘텐츠 너비(표시 에이전트 수×320)에 맞춰 창 너비 조정. 너비도 고정(드래그 불가).
+  ipcMain.handle('widget:fitWidth', (e, width: number) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    sizer.fitWidth(win, width)
   })
 
   ipcMain.handle('widget:close', (e) => {

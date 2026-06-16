@@ -98,6 +98,8 @@ const api = {
     getView: (): Promise<'collapsed' | 'normal'> => ipcRenderer.invoke('widget:getView'),
     /** 콘텐츠 높이를 알려 창 높이를 맞춤(펼침 상태에서만 적용, 하단 빈 공간 제거) */
     fitHeight: (height: number): Promise<void> => ipcRenderer.invoke('widget:fitHeight', height),
+    /** 콘텐츠 너비(에이전트 수)에 맞춰 창 너비를 맞춤 */
+    fitWidth: (width: number): Promise<void> => ipcRenderer.invoke('widget:fitWidth', width),
     close: (): Promise<void> => ipcRenderer.invoke('widget:close')
   }
 }
