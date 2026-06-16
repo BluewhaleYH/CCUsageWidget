@@ -5,6 +5,7 @@ import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
+import { applyTaskbarVisibility } from './taskbar'
 import { clampWidth, DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH, store, viewHeight } from './store'
 import { usagePoller } from './usage/poller'
 
@@ -30,7 +31,8 @@ function createWindow(): void {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
+    // 작업표시줄/Dock 노출은 뷰에 따라 결정(아래 applyTaskbarVisibility). 펼침은 숨김.
+    skipTaskbar: view !== 'collapsed',
     resizable: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -42,6 +44,9 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => mainWindow?.show())
+
+  // 복원된 뷰에 맞춰 작업표시줄/Dock 노출 상태 적용(최소화일 때만 노출)
+  applyTaskbarVisibility(mainWindow, view)
 
   mainWindow.on('close', () => {
     if (!mainWindow) return

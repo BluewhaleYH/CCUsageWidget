@@ -39,6 +39,7 @@ import {
   viewHeight,
   type WidgetView
 } from './store'
+import { applyTaskbarVisibility } from './taskbar'
 import { usagePoller } from './usage/poller'
 
 type GetWindow = () => BrowserWindow | null
@@ -65,6 +66,8 @@ export function registerIpc(_getWindow: GetWindow): void {
     win.setMinimumSize(MIN_WIDTH, h)
     win.setMaximumSize(MAX_WIDTH, h)
     store.set('view', view)
+    // 최소화 상태에서만 작업표시줄/Dock에 노출
+    applyTaskbarVisibility(win, view)
   })
   ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')
 
