@@ -1,6 +1,7 @@
 import { formatCost, formatNumber, formatTokens } from '../lib/format'
 import { gridCell, gridState, visibleProviders } from '../lib/grid'
 import { LABEL_WIDTH } from '../lib/layout'
+import { limitFor, TIERS, usagePct, type HostTiers, type Tier } from '../lib/tier'
 import type { Period, Provider, UsageCell, UsageGrid as Grid } from '../lib/types'
 
 const PROVIDER_LABEL: Record<Provider, string> = {
@@ -50,7 +51,15 @@ const METRICS: Array<{ label: string; field: TokenField; total?: boolean }> = [
  * 행=기간(일일/월간) × 열=프로바이더(Claude/Codex/Gemini).
  * 각 칸 = 비용 + 모델 칩 + 토큰 세부(Input/…/Total, K·M·B 축약).
  */
-export function UsageGrid({ grid }: { grid: Grid | null }) {
+interface GridProps {
+  grid: Grid | null
+  /** 에이전트별 티어(월간 한도 % 계산) */
+  tiers: HostTiers
+  /** 티어 변경(드롭다운) */
+  onTierChange: (provider: Provider, tier: Tier) => void
+}
+
+export function UsageGrid({ grid, tiers, onTierChange }: GridProps) {
   const state = gridState(grid)
   if (state === 'loading') return <div className="usage-grid msg">데이터를 불러오는 중…</div>
   if (state === 'no-host') return <div className="usage-grid msg">등록된 호스트 없음 · + 로 등록</div>
@@ -74,7 +83,19 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
         <span className="rowlabel" />
         {providers.map((p) => (
           <span key={p} className="colhead">
-            {PROVIDER_LABEL[p]}
+            <span className="colhead-name">{PROVIDER_LABEL[p]}</span>
+            <select
+              className="tier-select"
+              title="티어(월간 한도)"
+              value={tiers[p]}
+              onChange={(e) => onTierChange(p, e.target.value as Tier)}
+            >
+              {TIERS.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
           </span>
         ))}
       </div>
@@ -82,7 +103,11 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
         <div key={key} className="grid-row" style={cols}>
           <span className="rowlabel">{label}</span>
           {providers.map((p) => (
-            <Cell key={p} cell={gridCell(g, p, key)} />
+            <Cell
+              key={p}
+              cell={gridCell(g, p, key)}
+              limit={key === 'monthly' ? limitFor(p, tiers[p]) : undefined}
+            />
           ))}
         </div>
       ))}
@@ -90,12 +115,20 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
   )
 }
 
-function Cell({ cell }: { cell: UsageCell | undefined }) {
+function Cell({ cell, limit }: { cell: UsageCell | undefined; limit?: number }) {
   if (!cell || !cell.present) return <div className="cell none">없음</div>
   const models = shortModels(cell.modelsUsed)
   return (
     <div className="cell">
-      <b className="cost">{formatCost(cell.cost)}</b>
+      <b className="cost">
+        {formatCost(cell.cost)}
+        {limit !== undefined && (
+          <span className="cost-pct" title={`월간 한도 $${limit}`}>
+            {' / '}
+            {usagePct(cell.cost, limit)}%
+          </span>
+        )}
+      </b>
       {models.length > 0 && (
         <div className="models">
           {models.map((m) => (

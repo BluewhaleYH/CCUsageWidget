@@ -7,6 +7,8 @@ import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
 import { AGGREGATE_ALIAS, AGGREGATE_ID, buildAggregateGrid } from './lib/aggregate'
 import { connDot } from './lib/host'
+import { tiersWithDefaults, type Tier } from './lib/tier'
+import type { Provider } from './lib/types'
 import type {
   HostEntry,
   HostListResult,
@@ -35,6 +37,7 @@ interface DisplayHost {
 function App() {
   const [grids, setGrids] = useState<Record<string, Grid>>({})
   const [logs, setLogs] = useState<Record<string, LogEntry[]>>({})
+  const [tiers, setTiers] = useState<Record<string, Record<string, string>>>({})
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [viewIndex, setViewIndex] = useState(0)
   const [modalOpen, setModalOpen] = useState(false)
@@ -55,6 +58,11 @@ function App() {
     })
     void window.api.usage.refresh()
     return off
+  }, [])
+
+  // 저장된 티어 선택 로드(월간 한도 % 계산용)
+  useEffect(() => {
+    void window.api.tier.getAll().then(setTiers)
   }, [])
 
   // 활동 로그 구독 — 호스트별 버퍼에 누적
@@ -127,6 +135,12 @@ function App() {
     setViewIndex((v) => v + (direction === 'next' ? 1 : -1))
   }, [])
 
+  // 에이전트 티어 선택(월간 한도 %) — 호스트/종합별. 낙관적 갱신 + 영속.
+  const setTier = useCallback((hostId: string, provider: Provider, tier: Tier) => {
+    setTiers((prev) => ({ ...prev, [hostId]: { ...(prev[hostId] ?? {}), [provider]: tier } }))
+    void window.api.tier.set({ hostId, provider, tier })
+  }, [])
+
   // 현재(실제) 호스트 삭제(내장 로컬·종합 제외).
   const deleteCurrentHost = useCallback(async () => {
     if (!currentRealId || currentRealId === 'local') return
@@ -181,7 +195,11 @@ function App() {
                 className={`carousel-panel${i === index ? ' active' : ''}`}
                 style={{ width: `${100 / count}%` }}
               >
-                <UsageGrid grid={gridFor(dh)} />
+                <UsageGrid
+                  grid={gridFor(dh)}
+                  tiers={tiersWithDefaults(dh.id ? tiers[dh.id] : undefined)}
+                  onTierChange={(p, t) => setTier(dh.id, p, t)}
+                />
               </div>
             ))}
           </div>

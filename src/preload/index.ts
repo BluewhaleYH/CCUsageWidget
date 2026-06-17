@@ -67,6 +67,17 @@ const api = {
       return () => ipcRenderer.removeListener('log:entry', listener)
     }
   },
+  tier: {
+    /** 전체 티어 선택 조회(hostId → provider → tier). */
+    getAll: (): Promise<Record<string, Record<string, string>>> =>
+      ipcRenderer.invoke('tier:getAll'),
+    /** 한 호스트·에이전트의 티어 저장. 갱신된 전체 맵을 반환. */
+    set: (args: {
+      hostId: string
+      provider: string
+      tier: string
+    }): Promise<Record<string, Record<string, string>>> => ipcRenderer.invoke('tier:set', args)
+  },
   host: {
     /** 등록(연결 테스트 후 저장). args: { input, secret? } */
     add: (args: unknown): Promise<unknown> => ipcRenderer.invoke('host:add', args),
