@@ -55,6 +55,11 @@ function createWindow(): void {
     }
   })
 
+  // 항상 **최상위 레이어**에 둔다 — 전체화면 앱·다른 always-on-top 창 위에도 가리지 않게.
+  // (screen-saver = 가장 높은 레벨, visibleOnFullScreen = macOS 전체화면 스페이스 위에도 표시)
+  mainWindow.setAlwaysOnTop(true, 'screen-saver')
+  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+
   // 상시노출 상태면 표시(저장된 위치), 아니면 트레이만(숨김 유지).
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) return
