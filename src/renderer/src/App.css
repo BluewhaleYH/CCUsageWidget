@@ -38,7 +38,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 8px;
+  padding: 4px 6px;
 }
 
 .titlebar .left {
@@ -49,11 +49,11 @@ body {
 }
 
 .titlebar .alias {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   opacity: 0.92;
-  padding: 0 4px;
-  max-width: 150px;
+  padding: 0 3px;
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -61,14 +61,14 @@ body {
 
 .nav,
 .controls button {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: rgba(255, 255, 255, 0.06);
   color: #ddd;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1;
   transition: background 0.12s ease;
 }
@@ -89,8 +89,8 @@ body {
 
 /* 연결 점 (접힌 상태에서도 표시) */
 .conn-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   margin: 0 2px;
   flex-shrink: 0;
@@ -115,7 +115,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 6px;
   min-height: 0;
 }
 
@@ -126,14 +126,14 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   padding-right: 2px;
 }
 
 .usage-grid.msg {
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 13px;
   opacity: 0.6;
   text-align: center;
 }
@@ -145,8 +145,8 @@ body {
 
 .grid-row {
   display: grid;
-  grid-template-columns: 42px 1fr 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: 36px 1fr 1fr 1fr;
+  gap: 6px;
   align-items: stretch;
 }
 
@@ -159,17 +159,17 @@ body {
 
 .colhead {
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   opacity: 0.7;
-  padding: 2px 0 4px;
+  padding: 1px 0 3px;
 }
 
 .rowlabel {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   opacity: 0.8;
 }
@@ -178,16 +178,16 @@ body {
 .cell {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  padding: 11px 10px;
-  border-radius: 10px;
+  gap: 5px;
+  padding: 8px 8px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.06);
   min-width: 0;
 }
 
 .cell .cost {
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 700;
   text-align: center;
 }
@@ -196,33 +196,33 @@ body {
 .cell .models {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
   justify-content: center;
 }
 
 .model-chip {
-  font-size: 12.5px;
+  font-size: 11px;
   line-height: 1.5;
-  padding: 1px 8px;
-  border-radius: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
   background: rgba(120, 150, 240, 0.18);
   color: #c7d2fe;
   white-space: nowrap;
 }
 
-/* 지표 — 줄 간격 넉넉히, 칩 구역과 사이 여백 */
+/* 지표 — 줄 간격, 칩 구역과 사이 여백 */
 .metrics {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .metric {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 12px;
 }
 
 .metric .k {
@@ -239,16 +239,16 @@ body {
 .metric.total {
   font-weight: 700;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 4px;
-  padding-top: 7px;
+  margin-top: 3px;
+  padding-top: 5px;
 }
 
 .cell.none {
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
   opacity: 0.35;
-  min-height: 64px;
+  min-height: 46px;
 }
 
 /* 상태 푸터 */
@@ -256,8 +256,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 11px;
-  font-size: 13px;
+  padding: 4px 8px;
+  font-size: 12px;
   opacity: 0.82;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -278,9 +278,9 @@ body {
 
 /* 의존성 점검 상태 칩 */
 .setup-chip {
-  font-size: 13px;
-  padding: 2px 9px;
-  border-radius: 8px;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 7px;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.06);
   color: #cfcfcf;

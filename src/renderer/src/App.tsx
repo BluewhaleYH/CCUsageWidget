@@ -51,7 +51,7 @@ function App() {
       const data = root.querySelector('.usage-grid, .usage-msg') as HTMLElement | null
       const footer = root.querySelector('.statusbar') as HTMLElement | null
       let h = (header?.offsetHeight ?? 0) + 2 // + 위젯 테두리
-      if (data) h += data.scrollHeight + 16 // + 본문(.body) 상하 패딩
+      if (data) h += data.scrollHeight + 12 // + 본문(.body) 상하 패딩(6+6)
       if (footer) h += footer.offsetHeight
       void window.api.widget.fitHeight(Math.ceil(h))
     }

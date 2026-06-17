@@ -26,9 +26,9 @@ export const SHOWN_MAX = 1100
  * 너비는 콘텐츠(에이전트 수×320 + 여백)에 맞춰 잠근다(WindowSizer).
  * MIN은 에이전트 1개(≈390) 수용, MAX는 여유(에이전트 3개≈1046).
  */
-export const MIN_WIDTH = 380
+export const MIN_WIDTH = 320
 export const MAX_WIDTH = 1280
-export const DEFAULT_WIDTH = 1046
+export const DEFAULT_WIDTH = 880
 
 /**
  * 영속 저장 스키마 (Phase 0 기본 + Phase 1 setup + Phase 2 hosts).
