@@ -65,21 +65,15 @@ class WindowSizer {
     return this.view === 'collapsed' ? COLLAPSED_HEIGHT : this.normalHeight
   }
 
-  /** 현재 위치를 우측 하단에 재앵커한다(크기 변화 없이). 표시 직전·디스플레이 변경 시 사용. */
-  reposition(win: BrowserWindow): void {
-    const { x, y } = bottomRight(this.width, this.height())
-    win.setBounds({ x, y })
-  }
-
-  /** 현재 너비·높이로 우측 하단에 앵커해 리사이즈 후 그 크기에 잠근다(드래그 불가). */
+  /** 현재 너비·높이로 리사이즈하되 **위치(좌상단)는 유지**하고 그 크기에 잠근다(크기 드래그 불가, 이동은 가능). */
   private apply(win: BrowserWindow): void {
     const w = this.width
     const h = this.height()
-    const { x, y } = bottomRight(w, h)
-    // 잠금 잠시 풀고 리사이즈 후 재잠금(min=max → 사용자 드래그로 조정 불가).
+    const b = win.getBounds() // 사용자가 옮긴 현재 위치 유지(우측 하단 고정 안 함)
+    // 크기 잠금 잠시 풀고 리사이즈 후 재잠금(min=max → 크기만 고정, 이동은 movable:true로 허용).
     win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
     win.setMaximumSize(MAX_WIDTH, SHOWN_MAX)
-    win.setBounds({ x, y, width: w, height: h })
+    win.setBounds({ x: b.x, y: b.y, width: w, height: h })
     win.setMinimumSize(w, h)
     win.setMaximumSize(w, h)
   }

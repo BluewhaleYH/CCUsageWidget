@@ -20,8 +20,11 @@ function createWindow(): void {
   const width = clampWidth(bounds?.width ?? DEFAULT_WIDTH)
   // 크기 잠금 관리자 초기화(복원된 뷰/너비). 이후 너비는 렌더러 fitWidth가 콘텐츠에 맞춰 조정.
   sizer.init(view, width)
-  // 위젯은 화면 우측 하단 구석에 고정(이동 불가).
-  const pos = bottomRight(width, height)
+  // 저장된 위치가 있으면 복원, 없으면(최초) 우측 하단 구석. 이후 사용자가 드래그로 이동 가능.
+  const pos =
+    bounds?.x != null && bounds?.y != null
+      ? { x: bounds.x, y: bounds.y }
+      : bottomRight(width, height)
 
   mainWindow = new BrowserWindow({
     width,
@@ -34,12 +37,12 @@ function createWindow(): void {
     minHeight: height,
     maxHeight: height,
     show: false,
-    // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김 / 이동 불가(우측 하단 고정)
+    // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김 / 드래그 이동 가능
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    movable: false,
+    movable: true,
     resizable: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -52,21 +55,26 @@ function createWindow(): void {
     }
   })
 
-  // 상시노출 상태면 표시(우측 하단), 아니면 트레이만(숨김 유지).
+  // 상시노출 상태면 표시(저장된 위치), 아니면 트레이만(숨김 유지).
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) return
-    if (trayController.isAlwaysShow()) {
-      sizer.reposition(mainWindow)
-      mainWindow.show()
-    }
+    if (trayController.isAlwaysShow()) mainWindow.show()
   })
 
-  mainWindow.on('close', () => {
+  const saveBounds = (): void => {
     if (!mainWindow) return
     const b = mainWindow.getBounds()
-    // 너비만 저장(위치는 우측 하단 고정, 높이는 뷰로 결정). 너비는 제약 범위로 클램프.
+    // 위치(드래그 이동 결과) + 너비 저장. 너비는 제약 범위로 클램프.
     store.set('windowBounds', { x: b.x, y: b.y, width: clampWidth(b.width), height: b.height })
+  }
+
+  // 드래그 이동 후 위치 저장(이동 멈춤 400ms 디바운스)
+  let moveTimer: ReturnType<typeof setTimeout> | null = null
+  mainWindow.on('move', () => {
+    if (moveTimer) clearTimeout(moveTimer)
+    moveTimer = setTimeout(saveBounds, 400)
   })
+  mainWindow.on('close', saveBounds)
 
   // 창이 파괴되면 폴링 중지 + 참조 해제(파괴된 창에 push 방지)
   mainWindow.on('closed', () => {

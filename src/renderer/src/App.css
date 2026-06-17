@@ -33,19 +33,19 @@ body {
   overflow: hidden;
 }
 
-/* 헤더바 (위젯은 우측 하단 고정 — 드래그 이동 없음) */
+/* 헤더바 (드래그로 위젯 이동 — 버튼류는 no-drag) */
 .titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 4px 6px;
+  -webkit-app-region: drag;
 }
 
 .titlebar .left {
   display: flex;
   align-items: center;
   gap: 4px;
-  -webkit-app-region: no-drag;
 }
 
 .titlebar .alias {
@@ -71,6 +71,7 @@ body {
   font-size: 13px;
   line-height: 1;
   transition: background 0.12s ease;
+  -webkit-app-region: no-drag;
 }
 
 .nav:disabled {
@@ -107,7 +108,6 @@ body {
 .controls {
   display: flex;
   gap: 4px;
-  -webkit-app-region: no-drag;
 }
 
 /* 본문 */
