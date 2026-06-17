@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Header } from './components/Header'
 import { HostFormModal } from './components/HostFormModal'
 import { LogPanel } from './components/LogPanel'
 import { SetupPanel } from './components/SetupPanel'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
-import { canSwitch, connDot, currentAlias } from './lib/host'
+import { AGGREGATE_ALIAS, AGGREGATE_ID, buildAggregateGrid } from './lib/aggregate'
+import { connDot } from './lib/host'
 import type {
   HostEntry,
   HostListResult,
@@ -18,16 +19,24 @@ import type {
 /** 호스트별 로그 버퍼 최대 줄 수 */
 const LOG_CAP = 200
 
+/** 캐러셀에 표시할 호스트(실제 + 종합 가상). */
+interface DisplayHost {
+  id: string
+  alias: string
+  virtual: boolean
+}
+
 /**
  * 위젯 루트. (UI_SPEC §2)
- * - 등록된 **모든 호스트 패널을 가로로 깔고**(각 패널 = 뷰포트 100% 폭), 현재 인덱스만 보이게 translateX.
- * - 창은 사용자 리사이즈 가능(최대 모니터 절반). 데이터는 메인이 모든 호스트를 백그라운드 폴링.
+ * - 등록된 모든 호스트 패널을 가로로 깔고 현재 인덱스만 노출(translateX). 데이터는 메인 백그라운드 폴링.
+ * - 호스트가 2개 이상이면 맨 앞에 **종합(가상)** 패널을 추가해 나머지 합산을 보여준다.
+ * - 창은 사용자 리사이즈 가능(최대 모니터 절반).
  */
 function App() {
   const [grids, setGrids] = useState<Record<string, Grid>>({})
   const [logs, setLogs] = useState<Record<string, LogEntry[]>>({})
   const [hosts, setHosts] = useState<HostEntry[]>([])
-  const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
+  const [viewIndex, setViewIndex] = useState(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [setupStatus, setSetupStatus] = useState<HostSetupStatus>('unknown')
@@ -37,7 +46,6 @@ function App() {
   const loadHosts = useCallback(async () => {
     const res = (await window.api.host.list()) as HostListResult
     setHosts(res.hosts)
-    setSelectedHostId(res.selectedHostId)
   }, [])
 
   // usage 그리드 구독 — hostId별 맵에 누적(전 호스트 폴링 결과)
@@ -49,7 +57,7 @@ function App() {
     return off
   }, [])
 
-  // 활동 로그 구독 — 호스트별 버퍼에 누적(현재 보는 호스트만 표시)
+  // 활동 로그 구독 — 호스트별 버퍼에 누적
   useEffect(() => {
     const off = window.api.log.onEntry((e) => {
       const entry = e as LogEntry
@@ -63,30 +71,42 @@ function App() {
     return off
   }, [])
 
-  const index = Math.max(
-    0,
-    hosts.findIndex((h) => h.id === selectedHostId)
-  )
-  const currentHost = hosts[index] ?? null
-  const currentGrid = currentHost ? (grids[currentHost.id] ?? null) : null
-  const count = Math.max(1, hosts.length)
+  // 호스트가 2개 이상이면 맨 앞에 종합(가상) 추가
+  const showAgg = hosts.length >= 2
+  const displayHosts = useMemo<DisplayHost[]>(() => {
+    const real = hosts.map((h) => ({ id: h.id, alias: h.alias, virtual: false }))
+    return showAgg ? [{ id: AGGREGATE_ID, alias: AGGREGATE_ALIAS, virtual: true }, ...real] : real
+  }, [hosts, showAgg])
 
-  // 선택 호스트의 의존성 상태 칩: 캐시 우선, 캐시 없을 때(최초)만 원격 점검 1회.
+  const aggGrid = useMemo(
+    () =>
+      showAgg ? buildAggregateGrid(grids, hosts.map((h) => h.id), new Date().toISOString()) : null,
+    [grids, hosts, showAgg]
+  )
+
+  const count = Math.max(1, displayHosts.length)
+  const index = ((viewIndex % count) + count) % count // 순환·항상 유효
+  const current = displayHosts[index] ?? null
+  const gridFor = (dh: DisplayHost): Grid | null => (dh.virtual ? aggGrid : (grids[dh.id] ?? null))
+  const currentGrid = current ? gridFor(current) : null
+  const currentRealId = current && !current.virtual ? current.id : null
+
+  // 현재 보는 실제 호스트의 의존성 상태: 캐시 우선, 없을 때(최초)만 원격 점검 1회.
   useEffect(() => {
-    if (!selectedHostId) return
+    if (!currentRealId) return
     let alive = true
-    void window.api.setup.status({ hostId: selectedHostId }).then((r) => {
+    void window.api.setup.status({ hostId: currentRealId }).then((r) => {
       if (!alive) return
       setSetupStatus(r.status)
       if (r.status !== 'unknown') return
-      void window.api.setup.check({ hostId: selectedHostId }).then((c) => {
+      void window.api.setup.check({ hostId: currentRealId }).then((c) => {
         if (alive) setSetupStatus(c.status)
       })
     })
     return () => {
       alive = false
     }
-  }, [selectedHostId])
+  }, [currentRealId])
 
   // 호스트 목록 로드 + 연결 상태 푸시 구독
   useEffect(() => {
@@ -102,19 +122,15 @@ function App() {
     return off
   }, [loadHosts])
 
-  // 좌/우 전환 — 인덱스(선택)만 이동. 데이터는 이미 폴링됨(재요청 없음).
-  const switchHost = useCallback(
-    async (direction: 'prev' | 'next') => {
-      await window.api.host.switch(direction)
-      await loadHosts()
-    },
-    [loadHosts]
-  )
+  // 좌/우 전환 — 인덱스만 이동(순환). 데이터는 이미 폴링됨(재요청 없음).
+  const switchHost = useCallback((direction: 'prev' | 'next') => {
+    setViewIndex((v) => v + (direction === 'next' ? 1 : -1))
+  }, [])
 
-  // 현재 호스트 삭제(내장 로컬 제외). 메인이 자격증명 정리 + 다음 호스트 재선택.
+  // 현재(실제) 호스트 삭제(내장 로컬·종합 제외).
   const deleteCurrentHost = useCallback(async () => {
-    if (!currentHost || currentHost.id === 'local') return
-    const removedId = currentHost.id
+    if (!currentRealId || currentRealId === 'local') return
+    const removedId = currentRealId
     await window.api.host.remove({ id: removedId })
     setConfirmDelete(false)
     setGrids((prev) => {
@@ -123,18 +139,29 @@ function App() {
       return next
     })
     await loadHosts()
-  }, [currentHost, loadHosts])
+  }, [currentRealId, loadHosts])
+
+  // 로그: 실제 호스트면 그 호스트, 종합이면 전 호스트 로그를 시간순 병합
+  const currentLogs: LogEntry[] = current?.virtual
+    ? Object.entries(logs)
+        .filter(([k]) => k !== '_global')
+        .flatMap(([, v]) => v)
+        .sort((a, b) => a.ts.localeCompare(b.ts))
+        .slice(-LOG_CAP)
+    : current
+      ? (logs[current.id] ?? [])
+      : []
 
   return (
     <div ref={rootRef} className="widget">
       <Header
-        alias={currentAlias(hosts, selectedHostId)}
-        canSwitch={canSwitch(hosts)}
+        alias={current?.alias ?? '호스트 없음'}
+        canSwitch={displayHosts.length > 1}
         conn={connDot(currentGrid)}
-        onPrev={() => void switchHost('prev')}
-        onNext={() => void switchHost('next')}
+        onPrev={() => switchHost('prev')}
+        onNext={() => switchHost('next')}
         onAdd={() => setModalOpen(true)}
-        canDelete={!!currentHost && currentHost.id !== 'local'}
+        canDelete={!!currentRealId && currentRealId !== 'local'}
         onDelete={() => setConfirmDelete(true)}
         onHide={() => window.api.widget.hide()}
       />
@@ -148,20 +175,24 @@ function App() {
               transform: `translateX(-${index * (100 / count)}%)`
             }}
           >
-            {hosts.map((h, i) => (
+            {displayHosts.map((dh, i) => (
               <div
-                key={h.id}
+                key={dh.id}
                 className={`carousel-panel${i === index ? ' active' : ''}`}
                 style={{ width: `${100 / count}%` }}
               >
-                <UsageGrid grid={grids[h.id] ?? null} />
+                <UsageGrid grid={gridFor(dh)} />
               </div>
             ))}
           </div>
         </div>
       </main>
-      <StatusBar grid={currentGrid} setupStatus={setupStatus} onOpenSetup={() => setSetupOpen(true)} />
-      <LogPanel entries={currentHost ? (logs[currentHost.id] ?? []) : []} />
+      <StatusBar
+        grid={currentGrid}
+        setupStatus={current?.virtual ? null : setupStatus}
+        onOpenSetup={current?.virtual ? undefined : () => setSetupOpen(true)}
+      />
+      <LogPanel entries={currentLogs} />
 
       {modalOpen && (
         <HostFormModal
@@ -173,23 +204,23 @@ function App() {
         />
       )}
 
-      {setupOpen && (
+      {setupOpen && currentRealId && (
         <SetupPanel
-          hostId={selectedHostId ?? 'local'}
-          hostAlias={currentAlias(hosts, selectedHostId)}
+          hostId={currentRealId}
+          hostAlias={current?.alias ?? currentRealId}
           onClose={() => setSetupOpen(false)}
           onStatusChange={setSetupStatus}
         />
       )}
 
-      {confirmDelete && currentHost && (
+      {confirmDelete && currentRealId && (
         <div className="modal-overlay" onClick={() => setConfirmDelete(false)}>
           <div className="modal confirm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
               <strong>호스트 삭제</strong>
             </div>
             <p className="confirm-msg">
-              <b>{currentAlias(hosts, currentHost.id)}</b> 호스트를 삭제할까요?
+              <b>{current?.alias}</b> 호스트를 삭제할까요?
               <br />
               등록 정보와 자격증명이 함께 제거됩니다.
             </p>
