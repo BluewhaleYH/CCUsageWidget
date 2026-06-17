@@ -1,5 +1,4 @@
 import { app, Menu, nativeImage, Tray, type BrowserWindow } from 'electron'
-import { sizer } from './sizing'
 import { store } from './store'
 import { TRAY_ICON_DATA_URL } from './trayIcon'
 
@@ -39,12 +38,8 @@ class TrayController {
     store.set('alwaysShow', value)
     const win = this.getWindow()
     if (win) {
-      if (value) {
-        sizer.reposition(win) // 우측 하단 앵커 후 표시
-        win.show()
-      } else {
-        win.hide()
-      }
+      if (value) win.show() // 마지막 위치 그대로 표시(사용자가 옮긴 자리 유지)
+      else win.hide()
     }
     this.rebuildMenu()
   }
