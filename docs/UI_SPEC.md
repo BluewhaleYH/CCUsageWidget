@@ -28,6 +28,8 @@
 
 ### 3.1 윈도우 셸 (트레이 상주 + 드래그 이동, Windows 1순위)
 - `BrowserWindow`: `frame:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`, `movable:true`
+  - **항상 최상위 레이어**: `setAlwaysOnTop(true, 'screen-saver')` + `setVisibleOnAllWorkspaces(true, {visibleOnFullScreen:true})`
+    → 전체화면 앱·다른 always-on-top 창 위에도 가리지 않음(필요 시 핫키로 숨김).
   - 창은 `transparent:true`이지만(라운드 모서리용) **위젯 본문 배경은 불투명**(`#15171c`)으로 둔다.
   - **드래그 이동**: 헤더바 `-webkit-app-region: drag`(버튼류 `no-drag`)로 위젯을 옮긴다.
     위치는 `windowBounds.x/y`에 저장(이동 멈춤 디바운스 + 종료)·복원. **최초 실행만** 우측 하단(`sizer.bottomRight`).
