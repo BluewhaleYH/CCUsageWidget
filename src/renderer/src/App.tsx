@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Header } from './components/Header'
 import { HostFormModal } from './components/HostFormModal'
 import { SetupPanel } from './components/SetupPanel'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
-import { visibleProviders } from './lib/grid'
 import { canSwitch, connDot, currentAlias } from './lib/host'
-import { contentWidth, gridWidth } from './lib/layout'
 import type {
   HostEntry,
   HostListResult,
@@ -15,13 +13,10 @@ import type {
   UsageGrid as Grid
 } from './lib/types'
 
-/** usage-grid 자체 우측 패딩(px) — 패널 폭에 포함. */
-const PANEL_PAD = 2
-
 /**
  * 위젯 루트. (UI_SPEC §2)
- * - 등록된 **모든 호스트 패널을 가로로 깔고**, 현재 인덱스만 보이도록 translateX로 이동.
- * - 데이터는 메인이 모든 호스트를 백그라운드 폴링해 hostId별로 푸시 → 전환은 재요청 없이 즉시.
+ * - 등록된 **모든 호스트 패널을 가로로 깔고**(각 패널 = 뷰포트 100% 폭), 현재 인덱스만 보이게 translateX.
+ * - 창은 사용자 리사이즈 가능(최대 모니터 절반). 데이터는 메인이 모든 호스트를 백그라운드 폴링.
  */
 function App() {
   const [grids, setGrids] = useState<Record<string, Grid>>({})
@@ -54,56 +49,7 @@ function App() {
   )
   const currentHost = hosts[index] ?? null
   const currentGrid = currentHost ? (grids[currentHost.id] ?? null) : null
-
-  /** 호스트의 표시 에이전트 수(최소 1 — 빈 패널도 폭 확보). */
-  const agentCount = useCallback(
-    (hostId: string): number => {
-      const g = grids[hostId]
-      return Math.max(1, g ? visibleProviders(g).length : 0)
-    },
-    [grids]
-  )
-
-  /** 각 패널 폭(px) = 그리드 폭 + usage-grid 우측 패딩. */
-  const panelWidth = useCallback(
-    (hostId: string): number => gridWidth(agentCount(hostId)) + PANEL_PAD,
-    [agentCount]
-  )
-
-  // 현재 패널까지의 누적 오프셋(translateX) — 현재 인덱스만 보이게 strip을 이동
-  const offset = useMemo(
-    () => hosts.slice(0, index).reduce((sum, h) => sum + panelWidth(h.id), 0),
-    [hosts, index, panelWidth]
-  )
-
-  // 현재 호스트의 에이전트 수에 맞춰 창 너비를 맞춘다(전환·데이터 도착 시)
-  useEffect(() => {
-    if (!currentHost) return
-    void window.api.widget.fitWidth(contentWidth(agentCount(currentHost.id)))
-  }, [currentHost, agentCount])
-
-  // 현재(active) 패널 콘텐츠 높이를 측정해 창 높이를 맞춤(하단 빈 공간 제거).
-  useLayoutEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-    const measure = (): void => {
-      const header = root.querySelector('.titlebar') as HTMLElement | null
-      const data = root.querySelector(
-        '.carousel-panel.active .usage-grid, .carousel-panel.active .usage-msg'
-      ) as HTMLElement | null
-      const footer = root.querySelector('.statusbar') as HTMLElement | null
-      let h = (header?.offsetHeight ?? 0) + 2 // + 위젯 테두리
-      if (data) h += data.scrollHeight + 12 // + 본문(.body) 상하 패딩(6+6)
-      if (footer) h += footer.offsetHeight
-      void window.api.widget.fitHeight(Math.ceil(h))
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(root)
-    const data = root.querySelector('.carousel-panel.active .usage-grid, .carousel-panel.active .usage-msg')
-    if (data) ro.observe(data)
-    return () => ro.disconnect()
-  }, [grids, selectedHostId, hosts])
+  const count = Math.max(1, hosts.length)
 
   // 선택 호스트의 의존성 상태 칩: 캐시 우선, 캐시 없을 때(최초)만 원격 점검 1회.
   useEffect(() => {
@@ -175,12 +121,18 @@ function App() {
 
       <main className="body">
         <div className="carousel-viewport">
-          <div className="carousel-strip" style={{ transform: `translateX(${-offset}px)` }}>
+          <div
+            className="carousel-strip"
+            style={{
+              width: `${count * 100}%`,
+              transform: `translateX(-${index * (100 / count)}%)`
+            }}
+          >
             {hosts.map((h, i) => (
               <div
                 key={h.id}
                 className={`carousel-panel${i === index ? ' active' : ''}`}
-                style={{ width: panelWidth(h.id) }}
+                style={{ width: `${100 / count}%` }}
               >
                 <UsageGrid grid={grids[h.id] ?? null} />
               </div>
