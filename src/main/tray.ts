@@ -13,14 +13,14 @@ class TrayController {
   private tray: Tray | null = null
   private getWindow: GetWindow = () => null
 
-  /** 트레이 생성 + 메뉴 구성. (창 표시 여부는 ready-to-show / setAlwaysShow가 결정) */
+  /** 트레이 생성 + 메뉴(종료만). 표시/숨김 토글은 좌클릭·핫키로. */
   init(getWindow: GetWindow): void {
     this.getWindow = getWindow
     const icon = nativeImage.createFromDataURL(TRAY_ICON_DATA_URL)
     this.tray = new Tray(icon)
-    this.tray.setToolTip('CCUsageWidget')
+    this.tray.setToolTip('CCUsageWidget (좌클릭/핫키로 표시·숨김)')
     this.tray.on('click', () => this.toggle())
-    this.rebuildMenu()
+    this.tray.setContextMenu(Menu.buildFromTemplate([{ label: '종료', click: () => app.quit() }]))
   }
 
   /** 저장된 상시노출 여부(기본: 표시). */
@@ -41,23 +41,6 @@ class TrayController {
       if (value) win.show() // 마지막 위치 그대로 표시(사용자가 옮긴 자리 유지)
       else win.hide()
     }
-    this.rebuildMenu()
-  }
-
-  private rebuildMenu(): void {
-    if (!this.tray) return
-    this.tray.setContextMenu(
-      Menu.buildFromTemplate([
-        {
-          label: '상시노출',
-          type: 'checkbox',
-          checked: this.isAlwaysShow(),
-          click: () => this.toggle()
-        },
-        { type: 'separator' },
-        { label: '종료', click: () => app.quit() }
-      ])
-    )
   }
 
   destroy(): void {

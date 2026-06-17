@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ensureLocalHost } from './hosts'
@@ -111,8 +111,11 @@ app.whenReady().then(() => {
   registerIpc(() => mainWindow)
   createWindow()
 
-  // 시스템 트레이(숨겨진 아이콘) 상주 — 상시노출 토글로 위젯 표시/숨김
+  // 시스템 트레이(숨겨진 아이콘) 상주 — 좌클릭/핫키로 위젯 표시/숨김
   trayController.init(() => mainWindow)
+
+  // 글로벌 핫키로 표시/숨김 토글 (Cmd/Ctrl+Shift+U)
+  globalShortcut.register('CommandOrControl+Shift+U', () => trayController.toggle())
 
   // 30초 사용량 폴링 시작 (DATA_SPEC §2.3) — 현재 선택 호스트만 조회해 usage:update 푸시
   usagePoller.start(() => mainWindow)
@@ -127,8 +130,9 @@ app.on('window-all-closed', () => {
   // 의도적으로 비움(트레이로 상주)
 })
 
-// 종료 시 캐시된 SSH 연결·트레이 정리
+// 종료 시 글로벌 핫키 해제 + 캐시된 SSH 연결·트레이 정리
 app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
   disposeAllRunners()
   trayController.destroy()
 })
