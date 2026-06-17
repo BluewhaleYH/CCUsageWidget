@@ -39,6 +39,11 @@ export interface StoreSchema {
   /** 현재 선택된 호스트 id (좌/우 전환 상태 영속화). */
   selectedHostId?: string
   /**
+   * 에이전트 티어 선택(월간 한도 대비 % 계산용). 호스트별 + 종합('__aggregate__').
+   * 키: hostId → { claude|codex|gemini → 티어 문자열 }. 미설정은 기본 T1.
+   */
+  tiers?: Record<string, Record<string, string>>
+  /**
    * 호스트별 자격증명(passphrase/password)의 safeStorage 암호문(base64).
    * 키: hostId. **평문 저장 금지** — 복호화는 credentials.ts 경유.
    */

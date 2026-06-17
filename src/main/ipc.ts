@@ -29,6 +29,7 @@ import {
   invalidateRunner
 } from './runnerFactory'
 import { logBus } from './logBus'
+import { store } from './store'
 import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
 
@@ -52,6 +53,18 @@ export function registerIpc(_getWindow: GetWindow): void {
   ipcMain.handle('widget:hide', () => {
     trayController.setAlwaysShow(false)
   })
+
+  // --- tier (월간 한도 대비 % — 호스트별 + 종합 에이전트 티어 선택, 영속) ---
+  ipcMain.handle('tier:getAll', () => store.get('tiers') ?? {})
+  ipcMain.handle(
+    'tier:set',
+    (_e, args: { hostId: string; provider: string; tier: string }) => {
+      const all = { ...(store.get('tiers') ?? {}) }
+      all[args.hostId] = { ...(all[args.hostId] ?? {}), [args.provider]: args.tier }
+      store.set('tiers', all)
+      return all
+    }
+  )
 
   // --- setup (SETUP_SPEC, Phase 1) ---
   ipcMain.handle('setup:check', async (_e, args?: { hostId?: string }) => {
