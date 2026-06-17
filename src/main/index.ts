@@ -14,7 +14,8 @@ let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   const bounds = store.get('windowBounds')
-  const view = store.get('view') ?? 'normal'
+  // 접힘(collapsed) 뷰는 폐기 — 항상 펼침(normal). 표시/숨김은 트레이 상시노출로 제어.
+  const view = 'normal' as const
   const height = viewHeight(view)
   const width = clampWidth(bounds?.width ?? DEFAULT_WIDTH)
   // 크기 잠금 관리자 초기화(복원된 뷰/너비). 이후 너비는 렌더러 fitWidth가 콘텐츠에 맞춰 조정.
@@ -42,6 +43,8 @@ function createWindow(): void {
     resizable: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      // 숨김(트레이) 상태에서도 렌더러가 throttle되지 않도록 — 백그라운드 데이터 갱신 유지
+      backgroundThrottling: false,
       // 보안 규칙 (CLAUDE.md): 절대 완화 금지
       sandbox: true,
       contextIsolation: true,

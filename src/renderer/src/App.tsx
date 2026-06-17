@@ -7,7 +7,6 @@ import { UsageGrid } from './components/UsageGrid'
 import { visibleProviders } from './lib/grid'
 import { canSwitch, connDot, currentAlias } from './lib/host'
 import { contentWidth } from './lib/layout'
-import { maximize, toggleCollapse, type View } from './lib/view'
 import type {
   HostEntry,
   HostListResult,
@@ -21,7 +20,6 @@ import type {
  * usage:update 구독으로 그리드 렌더, host:* 로 호스트 목록·전환.
  */
 function App() {
-  const [view, setView] = useState<View>('normal')
   const [grid, setGrid] = useState<Grid | null>(null)
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
@@ -43,18 +41,7 @@ function App() {
     return off
   }, [])
 
-  // 저장된 뷰(접힘/정상/확장) 복원
-  useEffect(() => {
-    void window.api.widget.getView().then((v) => setView(v))
-  }, [])
-
-  // 뷰 전이 + 창 리사이즈/영속화(main)
-  const applyView = useCallback((next: View) => {
-    setView(next)
-    void window.api.widget.setView(next)
-  }, [])
-
-  // 콘텐츠 높이를 측정해 창 높이를 맞춤(펼침 상태, 하단 빈 공간 제거).
+  // 콘텐츠 높이를 측정해 창 높이를 맞춤(하단 빈 공간 제거).
   // 헤더 + 데이터(스크롤 콘텐츠) + 푸터의 자연 높이 합을 main에 전달.
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -74,15 +61,15 @@ function App() {
     const data = root.querySelector('.usage-grid, .usage-msg')
     if (data) ro.observe(data)
     return () => ro.disconnect()
-  }, [grid, view])
+  }, [grid])
 
-  // 표시 에이전트 수에 맞춰 창 너비를 맞춘다(에이전트 칸 320px 고정). 데이터 없거나 접힘이면 유지.
+  // 표시 에이전트 수에 맞춰 창 너비를 맞춘다(에이전트 칸 고정폭). 데이터 없으면 유지.
   useEffect(() => {
-    if (view === 'collapsed' || !grid) return
+    if (!grid) return
     const n = visibleProviders(grid).length
     if (n === 0) return
     void window.api.widget.fitWidth(contentWidth(n))
-  }, [grid, view])
+  }, [grid])
 
   // 선택 호스트의 의존성 상태 칩: 캐시 우선. 캐시된 점검 결과가 없을 때(최초 방문)만
   // 원격 점검을 1회 수행한다 — 전환마다 node/npm/ccusage 점검을 반복하지 않음(SSH 부하↓).
@@ -127,32 +114,21 @@ function App() {
   )
 
   return (
-    <div ref={rootRef} className={`widget view-${view}`}>
+    <div ref={rootRef} className="widget">
       <Header
         alias={currentAlias(hosts, selectedHostId)}
         canSwitch={canSwitch(hosts)}
         conn={connDot(grid)}
-        view={view}
         onPrev={() => void switchHost('prev')}
         onNext={() => void switchHost('next')}
         onAdd={() => setModalOpen(true)}
-        onMinimize={() => applyView(toggleCollapse(view))}
-        onMaximize={() => applyView(maximize())}
-        onClose={() => window.api.widget.hide()}
+        onHide={() => window.api.widget.hide()}
       />
 
-      {view !== 'collapsed' && (
-        <>
-          <main className="body">
-            <UsageGrid grid={grid} />
-          </main>
-          <StatusBar
-            grid={grid}
-            setupStatus={setupStatus}
-            onOpenSetup={() => setSetupOpen(true)}
-          />
-        </>
-      )}
+      <main className="body">
+        <UsageGrid grid={grid} />
+      </main>
+      <StatusBar grid={grid} setupStatus={setupStatus} onOpenSetup={() => setSetupOpen(true)} />
 
       {modalOpen && (
         <HostFormModal
