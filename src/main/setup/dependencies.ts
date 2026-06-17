@@ -68,8 +68,9 @@ export const INSTALL_COMMANDS: Record<OsType, Partial<Record<DependencyName, str
     ccusage: 'npm install -g ccusage'
   },
   windows: {
-    node: 'winget install OpenJS.NodeJS',
-    npm: 'winget install OpenJS.NodeJS',
+    // 무인 설치 — 소스/패키지 약관 자동 동의(없으면 프롬프트에서 멈춰 실패)
+    node: 'winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements',
+    npm: 'winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements',
     ccusage: 'npm install -g ccusage'
   },
   unknown: {
@@ -89,10 +90,15 @@ export function getInstallCommand(os: OsType, name: DependencyName): string | nu
  */
 export function buildInstallPlan(report: SetupReport): InstallPlanItem[] {
   const plan: InstallPlanItem[] = []
+  const seen = new Set<string>()
   for (const check of report.checks) {
     if (check.installed) continue
     const command = getInstallCommand(report.os, check.name)
-    if (command) plan.push({ name: check.name, command })
+    if (!command) continue
+    // 같은 명령(예: node+npm = 'brew install node')은 1회만 실행한다.
+    if (seen.has(command)) continue
+    seen.add(command)
+    plan.push({ name: check.name, command })
   }
   return plan
 }
@@ -100,39 +106,58 @@ export function buildInstallPlan(report: SetupReport): InstallPlanItem[] {
 /** 설치 동의 콜백 — 항목별로 y(true)/n(false)를 반환한다. */
 export type InstallConfirm = (item: InstallPlanItem) => boolean | Promise<boolean>
 
+/** 설치 진행 단계 콜백 (로그 영역용). */
+export type InstallStep = (item: InstallPlanItem, outcome: InstallOutcome) => void
+
+/** 설치 명령 타임아웃(ms) — node/brew 등은 60초를 넘길 수 있어 넉넉히. */
+const INSTALL_TIMEOUT_MS = 300_000
+
 /**
  * 설치 계획을 적용한다. (SETUP_SPEC §4.3~4.4)
  * **동의(confirm)가 true일 때만** 설치 명령을 실행한다. false면 'skipped'.
  * 동의 없이는 어떤 설치 명령도 실행하지 않는다(§5 보안 규칙).
+ * `onStart`/`onStep`으로 진행 상황을 알린다(로그 영역).
  */
 export async function applyInstallPlan(
   runner: CommandRunner,
   plan: InstallPlanItem[],
-  confirm: InstallConfirm
+  confirm: InstallConfirm,
+  hooks?: { onStart?: (item: InstallPlanItem) => void; onStep?: InstallStep }
 ): Promise<InstallOutcome[]> {
   const outcomes: InstallOutcome[] = []
   for (const item of plan) {
     const agreed = await confirm(item)
     if (!agreed) {
-      outcomes.push({ name: item.name, status: 'skipped', command: item.command })
+      const out: InstallOutcome = { name: item.name, status: 'skipped', command: item.command }
+      outcomes.push(out)
+      hooks?.onStep?.(item, out)
       continue
     }
 
-    const res = await runner.run(item.command)
+    hooks?.onStart?.(item)
+    const res = await runner.run(item.command, INSTALL_TIMEOUT_MS)
     const log = [res.stdout, res.stderr].filter(Boolean).join('\n').trim()
-    if (res.code === 0) {
-      outcomes.push({ name: item.name, status: 'installed', command: item.command, log })
-    } else {
-      outcomes.push({
-        name: item.name,
-        status: 'failed',
-        command: item.command,
-        log,
-        error: `exit code ${res.code}`
-      })
-    }
+    const out: InstallOutcome =
+      res.code === 0
+        ? { name: item.name, status: 'installed', command: item.command, log }
+        : {
+            name: item.name,
+            status: 'failed',
+            command: item.command,
+            log,
+            // 출력 마지막 줄을 에러 요약으로(없으면 종료코드)
+            error: lastLine(log) || `exit code ${res.code}`
+          }
+    outcomes.push(out)
+    hooks?.onStep?.(item, out)
   }
   return outcomes
+}
+
+/** 출력에서 의미있는 마지막 줄(에러 요약용). */
+function lastLine(text: string): string {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  return lines.length > 0 ? lines[lines.length - 1] : ''
 }
 
 /**

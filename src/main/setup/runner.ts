@@ -16,16 +16,17 @@ export interface CommandResult {
 }
 
 export interface CommandRunner {
-  run(command: string): Promise<CommandResult>
+  /** 명령 실행. timeoutMs를 주면 그 시간(ms) 후 강제 종료(설치 등 장시간 명령용). */
+  run(command: string, timeoutMs?: number): Promise<CommandResult>
 }
 
 /** 로컬 머신에서 명령을 실행하는 러너 (Phase 1 동작/진단용) */
 export class LocalCommandRunner implements CommandRunner {
   constructor(private readonly timeoutMs = 60_000) {}
 
-  run(command: string): Promise<CommandResult> {
+  run(command: string, timeoutMs?: number): Promise<CommandResult> {
     return new Promise((resolve) => {
-      exec(command, { timeout: this.timeoutMs, windowsHide: true }, (error, stdout, stderr) => {
+      exec(command, { timeout: timeoutMs ?? this.timeoutMs, windowsHide: true }, (error, stdout, stderr) => {
         // exec 콜백의 error.code는 number(종료코드) 또는 'ETIMEDOUT' 등 문자열일 수 있다.
         const code =
           error && typeof (error as { code?: unknown }).code === 'number'

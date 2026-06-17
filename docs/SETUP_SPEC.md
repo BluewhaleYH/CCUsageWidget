@@ -54,15 +54,18 @@
 
 ### 4.4 설치 진행 (Install)
 - `y` 동의 시, 원격 머신에 SSH로 설치 명령을 실행한다.
-- **OS별 설치 전략** (4.6 OS 감지 결과 활용):
+- **OS별 설치 전략** (4.6 OS 감지 결과 활용, 내부 화이트리스트 테이블 `INSTALL_COMMANDS`):
   - **ccusage**: `npm install -g ccusage` (node·npm 선행 필요)
   - **node/npm**:
     - macOS: `brew install node` (Homebrew 존재 시)
-    - Ubuntu/Debian: `sudo apt-get install -y nodejs npm` 또는 NodeSource 스크립트
-    - Windows: `winget install OpenJS.NodeJS` 등
-- 설치 명령은 OS·패키지 관리자·권한(sudo)에 따라 달라지므로, **OS별 설치 명령 매핑 테이블**을
-  내부에 정의해 사용한다.
-- 설치 진행 상황(로그)과 성공/실패 결과를 사용자에게 표시한다.
+    - Ubuntu/Debian: `sudo apt-get install -y nodejs npm`
+    - Windows: `winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements`
+      (약관 자동 동의 — 없으면 프롬프트에서 멈춰 실패)
+- **node+npm는 같은 명령**이면 계획에서 **1회로 dedup**(중복 설치 방지).
+- 설치 명령은 장시간(brew/winget 등) 걸릴 수 있어 **타임아웃 300초**를 둔다.
+- 설치 진행 상황은 **위젯 하단 로그 영역**에 남기고(시작/완료/실패), 실패 시 **명령 출력(stdout/stderr)과
+  에러 요약**을 SETUP 패널에 표시해 원인을 알 수 있게 한다.
+- ⚠️ 권한 문제(예: 시스템 node의 `npm -g` EACCES, `sudo` 비밀번호 필요)는 자동 해결 불가 — 에러를 그대로 노출한다.
 
 ### 4.5 폴백 (Fallback)
 - ccusage 설치를 건너뛰거나 실패한 경우, 데이터 조회 시

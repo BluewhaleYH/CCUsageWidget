@@ -609,3 +609,21 @@ button.setup-chip {
 .outcome-list li.skipped {
   opacity: 0.6;
 }
+
+.outcome-list li {
+  margin-bottom: 4px;
+}
+
+.outcome-log {
+  margin-top: 3px;
+  padding: 5px 7px;
+  max-height: 120px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  color: #e0c0c0;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 5px;
+}
