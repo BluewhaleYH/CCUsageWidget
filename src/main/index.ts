@@ -5,9 +5,9 @@ import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
-import { sizer } from './sizing'
-import { applyTaskbarVisibility } from './taskbar'
+import { bottomRight, sizer } from './sizing'
 import { clampWidth, DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH, store, viewHeight } from './store'
+import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
 
 let mainWindow: BrowserWindow | null = null
@@ -16,26 +16,29 @@ function createWindow(): void {
   const bounds = store.get('windowBounds')
   const view = store.get('view') ?? 'normal'
   const height = viewHeight(view)
+  const width = clampWidth(bounds?.width ?? DEFAULT_WIDTH)
   // 크기 잠금 관리자 초기화(복원된 뷰/너비). 이후 너비는 렌더러 fitWidth가 콘텐츠에 맞춰 조정.
-  sizer.init(view, bounds?.width ?? DEFAULT_WIDTH)
+  sizer.init(view, width)
+  // 위젯은 화면 우측 하단 구석에 고정(이동 불가).
+  const pos = bottomRight(width, height)
 
   mainWindow = new BrowserWindow({
-    width: clampWidth(bounds?.width ?? DEFAULT_WIDTH),
+    width,
     height,
-    x: bounds?.x,
-    y: bounds?.y,
+    x: pos.x,
+    y: pos.y,
     minWidth: MIN_WIDTH,
     maxWidth: MAX_WIDTH,
     // 높이는 뷰로만 결정 — 사용자 드래그로 조정 불가하도록 현재 뷰 높이에 고정(min=max).
     minHeight: height,
     maxHeight: height,
     show: false,
-    // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김
+    // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김 / 이동 불가(우측 하단 고정)
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    // 작업표시줄/Dock 노출은 뷰에 따라 결정(아래 applyTaskbarVisibility). 펼침은 숨김.
-    skipTaskbar: view !== 'collapsed',
+    skipTaskbar: true,
+    movable: false,
     resizable: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -46,15 +49,19 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
-
-  // 복원된 뷰에 맞춰 작업표시줄/Dock 노출 상태 적용(최소화일 때만 노출)
-  applyTaskbarVisibility(mainWindow, view)
+  // 상시노출 상태면 표시(우측 하단), 아니면 트레이만(숨김 유지).
+  mainWindow.on('ready-to-show', () => {
+    if (!mainWindow) return
+    if (trayController.isAlwaysShow()) {
+      sizer.reposition(mainWindow)
+      mainWindow.show()
+    }
+  })
 
   mainWindow.on('close', () => {
     if (!mainWindow) return
     const b = mainWindow.getBounds()
-    // 위치·너비만 저장(높이는 뷰로 결정). 너비는 제약 범위로 클램프.
+    // 너비만 저장(위치는 우측 하단 고정, 높이는 뷰로 결정). 너비는 제약 범위로 클램프.
     store.set('windowBounds', { x: b.x, y: b.y, width: clampWidth(b.width), height: b.height })
   })
 
@@ -93,6 +100,9 @@ app.whenReady().then(() => {
   registerIpc(() => mainWindow)
   createWindow()
 
+  // 시스템 트레이(숨겨진 아이콘) 상주 — 상시노출 토글로 위젯 표시/숨김
+  trayController.init(() => mainWindow)
+
   // 30초 사용량 폴링 시작 (DATA_SPEC §2.3) — 현재 선택 호스트만 조회해 usage:update 푸시
   usagePoller.start(() => mainWindow)
 
@@ -101,11 +111,13 @@ app.whenReady().then(() => {
   })
 })
 
+// 트레이 상주 앱 — 창을 숨겨도 종료하지 않는다. 종료는 트레이 '종료'(app.quit)로만.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  // 의도적으로 비움(트레이로 상주)
 })
 
-// 종료 시 캐시된 SSH 연결 정리
+// 종료 시 캐시된 SSH 연결·트레이 정리
 app.on('will-quit', () => {
   disposeAllRunners()
+  trayController.destroy()
 })

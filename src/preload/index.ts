@@ -100,7 +100,8 @@ const api = {
     fitHeight: (height: number): Promise<void> => ipcRenderer.invoke('widget:fitHeight', height),
     /** 콘텐츠 너비(에이전트 수)에 맞춰 창 너비를 맞춤 */
     fitWidth: (width: number): Promise<void> => ipcRenderer.invoke('widget:fitWidth', width),
-    close: (): Promise<void> => ipcRenderer.invoke('widget:close')
+    /** 위젯 숨김(트레이로) — 앱 종료가 아님 */
+    hide: (): Promise<void> => ipcRenderer.invoke('widget:hide')
   }
 }
 

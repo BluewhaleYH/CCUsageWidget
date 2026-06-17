@@ -26,23 +26,26 @@
 
 ## 3. 구현 단계 (Implementation Steps)
 
-### 3.1 윈도우 셸
-- `BrowserWindow`: `frame:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`
+### 3.1 윈도우 셸 (트레이 상주 + 우측 하단 고정, Windows 1순위)
+- `BrowserWindow`: `frame:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`, `movable:false`
   - 창은 `transparent:true`이지만(라운드 모서리용) **위젯 본문 배경은 불투명**(`#15171c`)으로 둔다.
-    반투명 배경은 뒤 레이아웃과 겹쳐 가독성을 해쳐서 **불투명으로 확정**(blur 미사용).
-  - **창 너비 제약**: `minWidth: 960`, `maxWidth: 1280`(기본 1000). 너비만 사용자 조정 가능.
-  - **높이 고정**: 사용자가 높이를 드래그로 조정할 수 없다. 현재 뷰 높이로 `minHeight=maxHeight` 고정
-    (접힘=`COLLAPSED_HEIGHT`, 펼침=`SHOWN_HEIGHT`). 높이는 ─/□ 버튼으로만 전환.
-- 헤더바에 `-webkit-app-region: drag`로 위젯 이동, 버튼류는 `no-drag`
-- 위치·너비·뷰(접힘/펼침) 상태를 `electron-store`에 영속화(재시작 복원, `widget:setView/getView`)
+  - **위치 고정**: 화면 **우측 하단 구석**(주 디스플레이 작업영역, 여백 12px)에 앵커. **이동/드래그 없음**.
+    크기 변경 시에도 우측 하단에 재앵커(`sizer.bottomRight`).
+  - **너비**: 표시 에이전트 수×320 + 여백에 맞춰 자동(`widget:fitWidth`), `min/maxWidth`로 잠금.
+  - **높이 고정**: 현재 뷰 높이로 `minHeight=maxHeight` 고정(접힘=`COLLAPSED_HEIGHT`, 펼침=콘텐츠 높이 `fitHeight`).
+- **시스템 트레이(숨겨진 아이콘) 상주**: 트레이 아이콘 + 우클릭/좌클릭으로 **상시노출** 토글.
+  - 상시노출 ON → 우측 하단에 위젯 표시. OFF → 숨김(트레이만). 상태는 `electron-store`(`alwaysShow`)에 영속.
+  - 트레이 메뉴: `상시노출`(체크박스), `종료`(`app.quit`). 창을 숨겨도 앱은 트레이에 상주(`window-all-closed`에서 종료 안 함).
+- 너비·뷰(접힘/펼침)·상시노출 상태를 `electron-store`에 영속화(재시작 복원).
 
 ### 3.2 컨트롤 헤더바
 - 우측: **─(최소화)**, **□(최대화)**, **✕(종료)** 버튼
 - 좌측: 현재 호스트 **별칭** 표시, **◀ / ▶**(좌/우 전환), **+**(등록)
 - 모든 버튼은 클릭 영역 확보 + hover 피드백
 
-### 3.3 종료 (✕)
-- 위젯 종료. (트레이 옵션이 있다면 종료 vs 트레이 수납 정책 정의 — 기본: 앱 종료)
+### 3.3 ✕ (숨기기 — 트레이로 수납)
+- 앱을 종료하지 않고 **위젯을 숨긴다**(상시노출 OFF, `widget:hide`). 앱은 트레이에 계속 상주.
+- 완전 종료는 **트레이 메뉴 '종료'**(`app.quit`)로만.
 
 ### 3.4 최소화 ─ (확정: 접기 — 헤더바만 남김)
 - 데이터 영역·푸터를 숨기고 **헤더바만** 남겨 창 높이를 `COLLAPSED_HEIGHT`로 축소(토글: 접힘↔펼침)
