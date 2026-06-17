@@ -13,9 +13,27 @@ const PERIODS: Array<{ key: Period; label: string }> = [
   { key: 'monthly', label: '월간' }
 ]
 
-/** 모델 칩 라벨에서 에이전트 접두 제거 (claude-opus-4-8 → opus-4-8). 프로바이더는 헤더에 이미 표시. */
-function stripAgent(model: string): string {
-  return model.replace(/^(claude|codex|gemini)-/i, '')
+/**
+ * 모델 칩 라벨을 패밀리명으로 단축한다. 에이전트 접두(헤더에 이미 표시)와 버전을 제거.
+ * 예: claude-opus-4-8 → opus, gpt-5-codex → gpt, gpt-5 → gpt, gemini-2.5-pro → pro.
+ * (첫 숫자 토큰 이전의 알파벳 토큰; 숫자로 시작하면 숫자 없는 토큰만)
+ */
+function shortModel(model: string): string {
+  const noAgent = model.replace(/^(claude|codex|gemini)-/i, '')
+  const tokens = noAgent.split('-')
+  const lead: string[] = []
+  for (const t of tokens) {
+    if (/\d/.test(t)) break
+    lead.push(t)
+  }
+  if (lead.length > 0) return lead.join('-')
+  const alpha = tokens.filter((t) => !/\d/.test(t))
+  return alpha.length > 0 ? alpha.join('-') : noAgent
+}
+
+/** 단축 모델명 목록(중복 제거) — 버전만 다른 동일 패밀리는 하나로 합친다. */
+function shortModels(models: string[]): string[] {
+  return Array.from(new Set(models.map(shortModel)))
 }
 
 type TokenField = 'inputTokens' | 'outputTokens' | 'cacheCreationTokens' | 'cacheReadTokens' | 'totalTokens'
@@ -74,15 +92,15 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
 
 function Cell({ cell }: { cell: UsageCell | undefined }) {
   if (!cell || !cell.present) return <div className="cell none">없음</div>
-  const models = cell.modelsUsed
+  const models = shortModels(cell.modelsUsed)
   return (
     <div className="cell">
       <b className="cost">{formatCost(cell.cost)}</b>
       {models.length > 0 && (
         <div className="models">
           {models.map((m) => (
-            <span key={m} className="model-chip" title={m}>
-              {stripAgent(m)}
+            <span key={m} className="model-chip">
+              {m}
             </span>
           ))}
         </div>
