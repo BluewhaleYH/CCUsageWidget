@@ -52,7 +52,7 @@ export function Header({
         <button className={view === 'normal' ? 'active' : ''} onClick={onMaximize} title="펼치기">
           □
         </button>
-        <button onClick={onClose} title="종료">
+        <button onClick={onClose} title="숨기기(트레이로)">
           ✕
         </button>
       </div>

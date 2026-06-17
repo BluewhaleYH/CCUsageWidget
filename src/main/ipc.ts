@@ -30,7 +30,7 @@ import {
 } from './runnerFactory'
 import { sizer } from './sizing'
 import { store, type WidgetView } from './store'
-import { applyTaskbarVisibility } from './taskbar'
+import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
 
 type GetWindow = () => BrowserWindow | null
@@ -50,8 +50,6 @@ export function registerIpc(_getWindow: GetWindow): void {
     if (!win) return
     store.set('view', view)
     sizer.setView(win, view)
-    // 최소화 상태에서만 작업표시줄/Dock에 노출
-    applyTaskbarVisibility(win, view)
   })
   ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')
 
@@ -69,8 +67,9 @@ export function registerIpc(_getWindow: GetWindow): void {
     sizer.fitWidth(win, width)
   })
 
-  ipcMain.handle('widget:close', (e) => {
-    BrowserWindow.fromWebContents(e.sender)?.close()
+  // 위젯 ✕ — 앱을 닫지 않고 트레이로 숨긴다(상시노출 off). 종료는 트레이 '종료'.
+  ipcMain.handle('widget:hide', () => {
+    trayController.setAlwaysShow(false)
   })
 
   // --- setup (SETUP_SPEC, Phase 1) ---

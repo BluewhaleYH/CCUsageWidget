@@ -138,7 +138,7 @@ function App() {
         onAdd={() => setModalOpen(true)}
         onMinimize={() => applyView(toggleCollapse(view))}
         onMaximize={() => applyView(maximize())}
-        onClose={() => window.api.widget.close()}
+        onClose={() => window.api.widget.hide()}
       />
 
       {view !== 'collapsed' && (

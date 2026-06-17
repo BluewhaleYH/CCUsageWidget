@@ -1,4 +1,4 @@
-import type { BrowserWindow } from 'electron'
+import { screen, type BrowserWindow } from 'electron'
 import {
   clampWidth,
   COLLAPSED_HEIGHT,
@@ -9,6 +9,18 @@ import {
   SHOWN_MIN,
   type WidgetView
 } from './store'
+
+/** 우측 하단 구석 여백(px). */
+const EDGE_MARGIN = 12
+
+/** 주 디스플레이 작업영역 기준, 주어진 크기를 우측 하단에 앵커한 좌표. */
+export function bottomRight(width: number, height: number): { x: number; y: number } {
+  const { workArea } = screen.getPrimaryDisplay()
+  return {
+    x: Math.round(workArea.x + workArea.width - width - EDGE_MARGIN),
+    y: Math.round(workArea.y + workArea.height - height - EDGE_MARGIN)
+  }
+}
 
 /**
  * 창 크기를 뷰/콘텐츠에 맞춰 **잠가서**(min=max) 관리한다. (UI_SPEC 위젯 동작)
@@ -53,16 +65,21 @@ class WindowSizer {
     return this.view === 'collapsed' ? COLLAPSED_HEIGHT : this.normalHeight
   }
 
-  /** 현재 너비·높이로 리사이즈 후 그 크기에 잠근다(드래그 불가). */
+  /** 현재 위치를 우측 하단에 재앵커한다(크기 변화 없이). 표시 직전·디스플레이 변경 시 사용. */
+  reposition(win: BrowserWindow): void {
+    const { x, y } = bottomRight(this.width, this.height())
+    win.setBounds({ x, y })
+  }
+
+  /** 현재 너비·높이로 우측 하단에 앵커해 리사이즈 후 그 크기에 잠근다(드래그 불가). */
   private apply(win: BrowserWindow): void {
     const w = this.width
     const h = this.height()
-    const b = win.getBounds()
-    if (b.width === w && b.height === h) return
+    const { x, y } = bottomRight(w, h)
     // 잠금 잠시 풀고 리사이즈 후 재잠금(min=max → 사용자 드래그로 조정 불가).
     win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
     win.setMaximumSize(MAX_WIDTH, SHOWN_MAX)
-    win.setBounds({ x: b.x, y: b.y, width: w, height: h })
+    win.setBounds({ x, y, width: w, height: h })
     win.setMinimumSize(w, h)
     win.setMaximumSize(w, h)
   }

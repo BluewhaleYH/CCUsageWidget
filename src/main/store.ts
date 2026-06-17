@@ -39,6 +39,11 @@ export interface StoreSchema {
   /** 위젯 뷰 상태(접힘/정상/확장) — 재시작 시 복원 (UI_SPEC §3.4~3.5) */
   view?: WidgetView
   /**
+   * 상시노출 여부 — 트레이에서 토글. true면 위젯을 우측 하단에 고정 표시, false면 트레이만.
+   * 재시작 시 복원.
+   */
+  alwaysShow?: boolean
+  /**
    * 호스트별 의존성 점검 리포트 캐시 (SETUP_SPEC §4.7).
    * 키: hostId (Phase 1은 'local'). 비민감 메타만 저장한다.
    */

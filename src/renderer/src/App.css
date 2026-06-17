@@ -33,13 +33,12 @@ body {
   overflow: hidden;
 }
 
-/* 헤더바: 드래그 이동 영역 */
+/* 헤더바 (위젯은 우측 하단 고정 — 드래그 이동 없음) */
 .titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 6px 8px;
-  -webkit-app-region: drag;
 }
 
 .titlebar .left {
