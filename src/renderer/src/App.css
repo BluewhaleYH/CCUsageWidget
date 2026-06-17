@@ -448,9 +448,29 @@ button.setup-chip {
   border-color: #3a6df0;
 }
 
+.modal-actions button.danger {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+
 .modal-actions button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* 삭제 확인 모달 */
+.modal.confirm {
+  max-width: 280px;
+}
+
+.confirm-msg {
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.nav.del {
+  font-size: 11px;
 }
 
 /* SETUP 점검/설치 패널 */

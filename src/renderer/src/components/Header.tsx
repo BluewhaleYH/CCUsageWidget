@@ -8,12 +8,25 @@ interface HeaderProps {
   onPrev: () => void
   onNext: () => void
   onAdd: () => void
+  /** 현재 호스트 삭제 가능 여부(내장 로컬은 불가) */
+  canDelete: boolean
+  onDelete: () => void
   /** ─ 트레이로 숨기기 */
   onHide: () => void
 }
 
-/** 컨트롤 헤더바 — 좌측 호스트 컨트롤 + 우측 숨기기(─). 위젯은 우측 하단 고정(이동 없음). (UI_SPEC §3.2) */
-export function Header({ alias, canSwitch, conn, onPrev, onNext, onAdd, onHide }: HeaderProps) {
+/** 컨트롤 헤더바 — 좌측 호스트 컨트롤 + 우측 숨기기(─). 헤더 드래그로 위젯 이동. (UI_SPEC §3.2) */
+export function Header({
+  alias,
+  canSwitch,
+  conn,
+  onPrev,
+  onNext,
+  onAdd,
+  canDelete,
+  onDelete,
+  onHide
+}: HeaderProps) {
   return (
     <header className="titlebar">
       <div className="left">
@@ -30,6 +43,11 @@ export function Header({ alias, canSwitch, conn, onPrev, onNext, onAdd, onHide }
         <button className="nav add" title="호스트 등록" onClick={onAdd}>
           +
         </button>
+        {canDelete && (
+          <button className="nav del" title="현재 호스트 삭제" onClick={onDelete}>
+            🗑
+          </button>
+        )}
       </div>
       <div className="controls">
         <button onClick={onHide} title="트레이로 숨기기">

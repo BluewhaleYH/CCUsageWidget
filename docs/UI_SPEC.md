@@ -26,22 +26,23 @@
 
 ## 3. 구현 단계 (Implementation Steps)
 
-### 3.1 윈도우 셸 (트레이 상주 + 우측 하단 고정, Windows 1순위)
-- `BrowserWindow`: `frame:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`, `movable:false`
+### 3.1 윈도우 셸 (트레이 상주 + 드래그 이동, Windows 1순위)
+- `BrowserWindow`: `frame:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`, `movable:true`
   - 창은 `transparent:true`이지만(라운드 모서리용) **위젯 본문 배경은 불투명**(`#15171c`)으로 둔다.
-  - **위치 고정**: 화면 **우측 하단 구석**(주 디스플레이 작업영역, 여백 12px)에 앵커. **이동/드래그 없음**.
-    크기 변경 시에도 우측 하단에 재앵커(`sizer.bottomRight`).
-  - **너비**: 표시 에이전트 수×320 + 여백에 맞춰 자동(`widget:fitWidth`), `min/maxWidth`로 잠금.
-  - **높이 고정**: 현재 뷰 높이로 `minHeight=maxHeight` 고정(접힘=`COLLAPSED_HEIGHT`, 펼침=콘텐츠 높이 `fitHeight`).
-- **시스템 트레이(숨겨진 아이콘) 상주**: 트레이 아이콘 + 우클릭/좌클릭으로 **상시노출** 토글.
-  - 상시노출 ON → 우측 하단에 위젯 표시. OFF → 숨김(트레이만). 상태는 `electron-store`(`alwaysShow`)에 영속.
-  - 트레이 메뉴: `상시노출`(체크박스), `종료`(`app.quit`). 창을 숨겨도 앱은 트레이에 상주(`window-all-closed`에서 종료 안 함).
-- 너비·뷰(접힘/펼침)·상시노출 상태를 `electron-store`에 영속화(재시작 복원).
+  - **드래그 이동**: 헤더바 `-webkit-app-region: drag`(버튼류 `no-drag`)로 위젯을 옮긴다.
+    위치는 `windowBounds.x/y`에 저장(이동 멈춤 디바운스 + 종료)·복원. **최초 실행만** 우측 하단(`sizer.bottomRight`).
+    리사이즈 시 위치(좌상단) 유지(우측 하단 재앵커 안 함).
+  - **너비**: 표시 에이전트 수에 맞춰 자동(`widget:fitWidth`), `min/maxWidth`로 크기 잠금(이동만 허용).
+  - **높이 고정**: 콘텐츠 높이로 `minHeight=maxHeight` 고정(`fitHeight`).
+- **시스템 트레이(숨겨진 아이콘) 상주**: 표시/숨김 토글은 **트레이 좌클릭** 또는 **글로벌 핫키 `Cmd/Ctrl+Shift+U`**.
+  - 상태는 `electron-store`(`alwaysShow`)에 영속. 창을 숨겨도 앱은 트레이에 상주(`window-all-closed`에서 종료 안 함).
+  - 트레이 **우클릭 메뉴: `종료`만**(`app.quit`).
+- 위치·너비·상시노출 상태를 `electron-store`에 영속화(재시작 복원).
 
 ### 3.2 컨트롤 헤더바
-- 우측: **─(최소화)**, **□(최대화)**, **✕(종료)** 버튼
-- 좌측: 현재 호스트 **별칭** 표시, **◀ / ▶**(좌/우 전환), **+**(등록)
-- 모든 버튼은 클릭 영역 확보 + hover 피드백
+- 우측: **─(트레이로 숨기기)** 버튼
+- 좌측: 연결 점, **◀ / ▶**(좌/우 전환), 현재 호스트 **별칭**, **+**(등록), **🗑(현재 호스트 삭제 — 내장 로컬 제외)**
+- 🗑 클릭 시 확인 모달 → `host:remove`(자격증명 정리 + 다음 호스트 재선택). 버튼은 `no-drag`, 나머지 헤더는 드래그 이동 영역.
 
 ### 3.3 ✕ (숨기기 — 트레이로 수납)
 - 앱을 종료하지 않고 **위젯을 숨긴다**(상시노출 OFF, `widget:hide`). 앱은 트레이에 계속 상주.

@@ -28,6 +28,7 @@ function App() {
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [setupStatus, setSetupStatus] = useState<HostSetupStatus>('unknown')
   const [setupOpen, setSetupOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -144,6 +145,20 @@ function App() {
     [loadHosts]
   )
 
+  // 현재 호스트 삭제(내장 로컬 제외). 메인이 자격증명 정리 + 다음 호스트 재선택.
+  const deleteCurrentHost = useCallback(async () => {
+    if (!currentHost || currentHost.id === 'local') return
+    const removedId = currentHost.id
+    await window.api.host.remove({ id: removedId })
+    setConfirmDelete(false)
+    setGrids((prev) => {
+      const next = { ...prev }
+      delete next[removedId]
+      return next
+    })
+    await loadHosts()
+  }, [currentHost, loadHosts])
+
   return (
     <div ref={rootRef} className="widget">
       <Header
@@ -153,6 +168,8 @@ function App() {
         onPrev={() => void switchHost('prev')}
         onNext={() => void switchHost('next')}
         onAdd={() => setModalOpen(true)}
+        canDelete={!!currentHost && currentHost.id !== 'local'}
+        onDelete={() => setConfirmDelete(true)}
         onHide={() => window.api.widget.hide()}
       />
 
@@ -190,6 +207,27 @@ function App() {
           onClose={() => setSetupOpen(false)}
           onStatusChange={setSetupStatus}
         />
+      )}
+
+      {confirmDelete && currentHost && (
+        <div className="modal-overlay" onClick={() => setConfirmDelete(false)}>
+          <div className="modal confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <strong>호스트 삭제</strong>
+            </div>
+            <p className="confirm-msg">
+              <b>{currentAlias(hosts, currentHost.id)}</b> 호스트를 삭제할까요?
+              <br />
+              등록 정보와 자격증명이 함께 제거됩니다.
+            </p>
+            <div className="modal-actions">
+              <button onClick={() => setConfirmDelete(false)}>취소</button>
+              <button className="danger" onClick={() => void deleteCurrentHost()}>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
