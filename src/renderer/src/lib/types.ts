@@ -31,6 +31,15 @@ export interface HostListResult {
   selectedHostId: string | null
 }
 
+/** 위젯 하단 로그 영역의 활동 로그 1줄(main logBus와 동일 형태). */
+export interface LogEntry {
+  ts: string
+  hostId: string | null
+  hostAlias: string | null
+  message: string
+  level: 'info' | 'error'
+}
+
 /** host:status 푸시 페이로드 */
 export interface HostStatusUpdate {
   id: string

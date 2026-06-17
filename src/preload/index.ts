@@ -59,6 +59,14 @@ const api = {
     /** 수동 갱신 요청(usage:refresh). 결과는 onUpdate로 전달된다. */
     refresh: (): Promise<{ ok: boolean }> => ipcRenderer.invoke('usage:refresh')
   },
+  log: {
+    /** 활동 로그 구독(log:entry). 해제 함수를 반환한다. */
+    onEntry: (callback: (entry: unknown) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, entry: unknown): void => callback(entry)
+      ipcRenderer.on('log:entry', listener)
+      return () => ipcRenderer.removeListener('log:entry', listener)
+    }
+  },
   host: {
     /** 등록(연결 테스트 후 저장). args: { input, secret? } */
     add: (args: unknown): Promise<unknown> => ipcRenderer.invoke('host:add', args),

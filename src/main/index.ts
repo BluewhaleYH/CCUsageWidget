@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
+import { logBus } from './logBus'
 import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
 import { applyResizeBounds, bottomRight } from './sizing'
@@ -116,6 +117,9 @@ app.whenReady().then(() => {
 
   registerIpc(() => mainWindow)
   createWindow()
+
+  // 로그 버스 — 메인 활동을 위젯 하단 로그 영역으로 푸시
+  logBus.init(() => mainWindow)
 
   // 시스템 트레이(숨겨진 아이콘) 상주 — 좌클릭/핫키로 위젯 표시/숨김
   trayController.init(() => mainWindow)

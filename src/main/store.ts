@@ -14,9 +14,9 @@ export interface WindowBounds {
  * 창 크기 제약 / 기본값. (사용자 리사이즈; 최대는 현재 모니터 작업영역의 가로·세로 절반 — 동적)
  */
 export const MIN_WIDTH = 280
-export const MIN_HEIGHT = 160
+export const MIN_HEIGHT = 240
 export const DEFAULT_WIDTH = 560
-export const DEFAULT_HEIGHT = 380
+export const DEFAULT_HEIGHT = 420
 
 /**
  * 영속 저장 스키마 (Phase 0 기본 + Phase 1 setup + Phase 2 hosts).

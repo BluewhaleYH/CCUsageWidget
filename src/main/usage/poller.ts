@@ -1,8 +1,9 @@
 import type { BrowserWindow } from 'electron'
 import { listHosts, updateHost } from '../hosts/repository'
 import type { HostEntry } from '../hosts'
+import { logBus } from '../logBus'
 import { createRunnerForHost, disposeRunner } from '../runnerFactory'
-import { fetchUsageGrid } from './index'
+import { fetchUsageGrid, type UsageLog } from './index'
 import type { UsageGrid } from './types'
 
 /** 폴링 주기 (DATA_SPEC §2.3) */
@@ -116,8 +117,15 @@ class UsagePoller {
 
   private async fetch(host: HostEntry, now: string): Promise<UsageGrid> {
     const runner = createRunnerForHost(host.id)
+    const onLog: UsageLog = (provider, period, phase, detail) => {
+      const label = `${provider} ${period}`
+      if (phase === 'start') logBus.emit(host.id, host.alias, `${label} 결과 받아오는 중…`)
+      else if (phase === 'done') logBus.emit(host.id, host.alias, `${label} 완료 ($${detail})`)
+      else if (phase === 'empty') logBus.emit(host.id, host.alias, `${label} 데이터 없음`)
+      else logBus.emit(host.id, host.alias, `${label} 실패: ${detail ?? '오류'}`, 'error')
+    }
     try {
-      return await fetchUsageGrid(runner, host, now)
+      return await fetchUsageGrid(runner, host, now, onLog)
     } finally {
       disposeRunner(runner)
     }
