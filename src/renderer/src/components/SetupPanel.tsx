@@ -10,6 +10,12 @@ interface Props {
   onStatusChange: (status: HostSetupStatus) => void
 }
 
+const OUTCOME_LABEL: Record<'installed' | 'skipped' | 'failed', string> = {
+  installed: '설치 완료',
+  skipped: '건너뜀',
+  failed: '실패'
+}
+
 /**
  * 의존성 점검/설치 패널. (SETUP_SPEC §4.2~4.4)
  * 열릴 때 현재 호스트를 점검하고, 누락 시 설치 명령 안내 + 동의(설치)까지.
@@ -100,8 +106,11 @@ export function SetupPanel({ hostId, hostAlias, onClose, onStatusChange }: Props
               <ul className="outcome-list">
                 {install.outcomes.map((o) => (
                   <li key={o.name} className={o.status}>
-                    {o.name}: {o.status}
-                    {o.error ? ` (${o.error})` : ''}
+                    <div className="outcome-head">
+                      {o.name}: {OUTCOME_LABEL[o.status]}
+                      {o.error ? ` — ${o.error}` : ''}
+                    </div>
+                    {o.status === 'failed' && o.log && <pre className="outcome-log">{o.log}</pre>}
                   </li>
                 ))}
               </ul>

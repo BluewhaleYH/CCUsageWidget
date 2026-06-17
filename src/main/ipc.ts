@@ -28,8 +28,14 @@ import {
   disposeRunner,
   invalidateRunner
 } from './runnerFactory'
+import { logBus } from './logBus'
 import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
+
+/** 로그 표시용 호스트 별칭(없으면 hostId). */
+function hostAliasOf(hostId: string): string {
+  return repository.getHost(hostId)?.alias ?? hostId
+}
 
 type GetWindow = () => BrowserWindow | null
 
@@ -50,10 +56,16 @@ export function registerIpc(_getWindow: GetWindow): void {
   // --- setup (SETUP_SPEC, Phase 1) ---
   ipcMain.handle('setup:check', async (_e, args?: { hostId?: string }) => {
     const hostId = args?.hostId ?? DEFAULT_HOST_ID
+    const alias = hostAliasOf(hostId)
     const runner = createRunnerForHost(hostId)
+    logBus.emit(hostId, alias, '의존성 점검 중…')
     const report = await runSetupCheck(runner, new Date().toISOString())
     saveReport(hostId, report)
     disposeRunner(runner)
+    const summary = report.checks
+      .map((c) => `${c.name} ${c.installed ? `✓${c.version ? ' ' + c.version : ''}` : '✗ 없음'}`)
+      .join(' · ')
+    logBus.emit(hostId, alias, `점검 완료 (OS: ${report.os}) — ${summary}`)
     return { report, status: summarizeStatus(report), plan: buildInstallPlan(report) }
   })
 
@@ -61,6 +73,7 @@ export function registerIpc(_getWindow: GetWindow): void {
     'setup:install',
     async (_e, args?: { hostId?: string; names?: DependencyName[] }) => {
       const hostId = args?.hostId ?? DEFAULT_HOST_ID
+      const alias = hostAliasOf(hostId)
       const runner = createRunnerForHost(hostId)
 
       let report: SetupReport | undefined = getReport(hostId)
@@ -73,11 +86,20 @@ export function registerIpc(_getWindow: GetWindow): void {
       const requested = args?.names
       const plan = requested ? fullPlan.filter((p) => requested.includes(p.name)) : fullPlan
 
-      const outcomes: InstallOutcome[] = await applyInstallPlan(runner, plan, () => true)
+      logBus.emit(hostId, alias, `의존성 설치 시작 (${plan.length}개)…`)
+      const outcomes: InstallOutcome[] = await applyInstallPlan(runner, plan, () => true, {
+        onStart: (item) => logBus.emit(hostId, alias, `${item.name} 설치 중: ${item.command}`),
+        onStep: (item, out) => {
+          if (out.status === 'installed') logBus.emit(hostId, alias, `${item.name} 설치 완료`)
+          else if (out.status === 'failed')
+            logBus.emit(hostId, alias, `${item.name} 설치 실패: ${out.error ?? '오류'}`, 'error')
+        }
+      })
 
       const updated = await runSetupCheck(runner, new Date().toISOString())
       saveReport(hostId, updated)
       disposeRunner(runner)
+      logBus.emit(hostId, alias, `설치 후 재점검 완료 — 상태: ${summarizeStatus(updated)}`)
 
       return { outcomes, report: updated, status: summarizeStatus(updated) }
     }

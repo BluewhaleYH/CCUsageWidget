@@ -82,7 +82,8 @@ export class SshCommandRunner implements CommandRunner {
     return this.connecting
   }
 
-  async run(command: string): Promise<CommandResult> {
+  // timeoutMs는 인터페이스 호환용(현재 SSH는 미사용 — 원격 설치 장시간 허용)
+  async run(command: string, _timeoutMs?: number): Promise<CommandResult> {
     try {
       await this.connect()
     } catch (err) {
