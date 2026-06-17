@@ -1,5 +1,3 @@
-import type { View } from '../lib/view'
-
 interface HeaderProps {
   /** 현재 호스트 별칭(없으면 안내 문구) */
   alias: string
@@ -7,33 +5,21 @@ interface HeaderProps {
   canSwitch: boolean
   /** 연결 점: on(연결)/off(끊김)/none(호스트 없음 — 숨김) */
   conn: 'on' | 'off' | 'none'
-  /** 현재 뷰(컨트롤 활성 표시용) */
-  view: View
   onPrev: () => void
   onNext: () => void
   onAdd: () => void
-  onMinimize: () => void
-  onMaximize: () => void
-  onClose: () => void
+  /** ─ 트레이로 숨기기 */
+  onHide: () => void
 }
 
-/** 컨트롤 헤더바 — 드래그 이동 영역, 좌측 호스트 컨트롤 + 우측 창 컨트롤. (UI_SPEC §3.2) */
-export function Header({
-  alias,
-  canSwitch,
-  conn,
-  view,
-  onPrev,
-  onNext,
-  onAdd,
-  onMinimize,
-  onMaximize,
-  onClose
-}: HeaderProps) {
+/** 컨트롤 헤더바 — 좌측 호스트 컨트롤 + 우측 숨기기(─). 위젯은 우측 하단 고정(이동 없음). (UI_SPEC §3.2) */
+export function Header({ alias, canSwitch, conn, onPrev, onNext, onAdd, onHide }: HeaderProps) {
   return (
     <header className="titlebar">
       <div className="left">
-        {conn !== 'none' && <span className={`conn-dot ${conn}`} title={conn === 'on' ? '연결됨' : '끊김'} />}
+        {conn !== 'none' && (
+          <span className={`conn-dot ${conn}`} title={conn === 'on' ? '연결됨' : '끊김'} />
+        )}
         <button className="nav" title="이전 호스트" onClick={onPrev} disabled={!canSwitch}>
           ◀
         </button>
@@ -46,14 +32,8 @@ export function Header({
         </button>
       </div>
       <div className="controls">
-        <button className={view === 'collapsed' ? 'active' : ''} onClick={onMinimize} title="접기">
+        <button onClick={onHide} title="트레이로 숨기기">
           ─
-        </button>
-        <button className={view === 'normal' ? 'active' : ''} onClick={onMaximize} title="펼치기">
-          □
-        </button>
-        <button onClick={onClose} title="숨기기(트레이로)">
-          ✕
         </button>
       </div>
     </header>
