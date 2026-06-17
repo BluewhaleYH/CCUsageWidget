@@ -136,15 +136,12 @@ export function registerIpc(_getWindow: GetWindow): void {
     }
   )
 
-  // direction: 'prev'|'next' 순환, 또는 { id } 직접 선택
+  // direction: 'prev'|'next' 순환, 또는 { id } 직접 선택.
+  // 모든 호스트를 백그라운드 폴링하므로 전환 시 재조회 불필요 — 선택 상태만 영속화(렌더러가 인덱스 이동).
   ipcMain.handle(
     'host:switch',
-    (_e, args: SwitchDirection | { id: string }): HostEntry | undefined => {
-      const result = typeof args === 'string' ? switchHost(args) : selectHost(args.id)
-      // 전환 시 즉시 1회 갱신 (DATA_SPEC §2.3)
-      usagePoller.refreshNow()
-      return result
-    }
+    (_e, args: SwitchDirection | { id: string }): HostEntry | undefined =>
+      typeof args === 'string' ? switchHost(args) : selectHost(args.id)
   )
 
   ipcMain.handle(
