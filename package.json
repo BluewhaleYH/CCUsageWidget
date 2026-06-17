@@ -1,6 +1,6 @@
 {
   "name": "ccusage-widget",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "SSH 멀티 호스트 ccusage 사용량을 보여주는 크로스플랫폼 데스크톱 위젯",
   "main": "./out/main/index.js",
   "author": "BluewhaleYH",
