@@ -31,11 +31,9 @@
   - **항상 최상위 레이어**: `setAlwaysOnTop(true, 'screen-saver')` + `setVisibleOnAllWorkspaces(true, {visibleOnFullScreen:true})`
     → 전체화면 앱·다른 always-on-top 창 위에도 가리지 않음(필요 시 핫키로 숨김).
   - 창은 `transparent:true`이지만(라운드 모서리용) **위젯 본문 배경은 불투명**(`#15171c`)으로 둔다.
-  - **드래그 이동**: 헤더바 `-webkit-app-region: drag`(버튼류 `no-drag`)로 위젯을 옮긴다.
-    위치는 `windowBounds.x/y`에 저장(이동 멈춤 디바운스 + 종료)·복원. **최초 실행만** 우측 하단(`sizer.bottomRight`).
-    리사이즈 시 위치(좌상단) 유지(우측 하단 재앵커 안 함).
-  - **너비**: 표시 에이전트 수에 맞춰 자동(`widget:fitWidth`), `min/maxWidth`로 크기 잠금(이동만 허용).
-  - **높이 고정**: 콘텐츠 높이로 `minHeight=maxHeight` 고정(`fitHeight`).
+  - **드래그 이동**: 헤더바 `-webkit-app-region: drag`(버튼류 `no-drag`). 위치는 `windowBounds.x/y`에 저장·복원. **최초 실행만** 우측 하단.
+  - **사용자 리사이즈**: `resizable:true`. 최소 `MIN_WIDTH×MIN_HEIGHT`(280×160), **최대 = 현재 모니터 작업영역의 가로·세로 절반**(`applyResizeBounds`, 이동 시 모니터 추종). 크기는 `windowBounds.width/height`에 저장·복원.
+  - 콘텐츠는 창 크기를 채운다: 캐러셀 패널 = 뷰포트 100%, 에이전트 칸 = `1fr`(창 너비에 맞춰 확장/축소), 넘치면 세로 스크롤.
 - **시스템 트레이(숨겨진 아이콘) 상주**: 표시/숨김 토글은 **트레이 좌클릭** 또는 **글로벌 핫키 `Cmd/Ctrl+Shift+U`**.
   - 상태는 `electron-store`(`alwaysShow`)에 영속. 창을 숨겨도 앱은 트레이에 상주(`window-all-closed`에서 종료 안 함).
   - 트레이 **우클릭 메뉴: `종료`만**(`app.quit`).

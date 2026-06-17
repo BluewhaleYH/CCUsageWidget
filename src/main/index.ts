@@ -5,8 +5,8 @@ import { ensureLocalHost } from './hosts'
 import { registerIpc } from './ipc'
 import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
-import { bottomRight, sizer } from './sizing'
-import { clampWidth, DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH, store, viewHeight } from './store'
+import { applyResizeBounds, bottomRight } from './sizing'
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH, MIN_HEIGHT, MIN_WIDTH, store } from './store'
 import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
 
@@ -14,13 +14,9 @@ let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   const bounds = store.get('windowBounds')
-  // 접힘(collapsed) 뷰는 폐기 — 항상 펼침(normal). 표시/숨김은 트레이 상시노출로 제어.
-  const view = 'normal' as const
-  const height = viewHeight(view)
-  const width = clampWidth(bounds?.width ?? DEFAULT_WIDTH)
-  // 크기 잠금 관리자 초기화(복원된 뷰/너비). 이후 너비는 렌더러 fitWidth가 콘텐츠에 맞춰 조정.
-  sizer.init(view, width)
-  // 저장된 위치가 있으면 복원, 없으면(최초) 우측 하단 구석. 이후 사용자가 드래그로 이동 가능.
+  const width = Math.max(MIN_WIDTH, bounds?.width ?? DEFAULT_WIDTH)
+  const height = Math.max(MIN_HEIGHT, bounds?.height ?? DEFAULT_HEIGHT)
+  // 저장된 위치가 있으면 복원, 없으면(최초) 우측 하단 구석. 이후 드래그 이동·리사이즈 가능.
   const pos =
     bounds?.x != null && bounds?.y != null
       ? { x: bounds.x, y: bounds.y }
@@ -32,12 +28,9 @@ function createWindow(): void {
     x: pos.x,
     y: pos.y,
     minWidth: MIN_WIDTH,
-    maxWidth: MAX_WIDTH,
-    // 높이는 뷰로만 결정 — 사용자 드래그로 조정 불가하도록 현재 뷰 높이에 고정(min=max).
-    minHeight: height,
-    maxHeight: height,
+    minHeight: MIN_HEIGHT,
     show: false,
-    // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김 / 드래그 이동 가능
+    // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김 / 드래그 이동·리사이즈 가능
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -55,6 +48,9 @@ function createWindow(): void {
     }
   })
 
+  // 최대 크기 = 현재 모니터 절반(최소/최대 제약 적용 + 초과 시 클램프)
+  applyResizeBounds(mainWindow)
+
   // 항상 **최상위 레이어**에 둔다 — 전체화면 앱·다른 always-on-top 창 위에도 가리지 않게.
   // (screen-saver = 가장 높은 레벨, visibleOnFullScreen = macOS 전체화면 스페이스 위에도 표시)
   mainWindow.setAlwaysOnTop(true, 'screen-saver')
@@ -69,16 +65,21 @@ function createWindow(): void {
   const saveBounds = (): void => {
     if (!mainWindow) return
     const b = mainWindow.getBounds()
-    // 위치(드래그 이동 결과) + 너비 저장. 너비는 제약 범위로 클램프.
-    store.set('windowBounds', { x: b.x, y: b.y, width: clampWidth(b.width), height: b.height })
+    // 위치(이동) + 크기(리사이즈) 저장.
+    store.set('windowBounds', { x: b.x, y: b.y, width: b.width, height: b.height })
   }
 
-  // 드래그 이동 후 위치 저장(이동 멈춤 400ms 디바운스)
-  let moveTimer: ReturnType<typeof setTimeout> | null = null
+  // 이동/리사이즈 후 저장(멈춤 400ms 디바운스). 이동 시 모니터가 바뀌었을 수 있으니 최대 크기 재계산.
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
+  const scheduleSave = (): void => {
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(saveBounds, 400)
+  }
   mainWindow.on('move', () => {
-    if (moveTimer) clearTimeout(moveTimer)
-    moveTimer = setTimeout(saveBounds, 400)
+    if (mainWindow) applyResizeBounds(mainWindow) // 다른 모니터로 옮겼을 때 절반-최대 추종
+    scheduleSave()
   })
+  mainWindow.on('resize', scheduleSave)
   mainWindow.on('close', saveBounds)
 
   // 창이 파괴되면 폴링 중지 + 참조 해제(파괴된 창에 push 방지)

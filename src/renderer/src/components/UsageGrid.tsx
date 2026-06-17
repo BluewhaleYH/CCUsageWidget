@@ -1,6 +1,6 @@
 import { formatCost, formatNumber, formatTokens } from '../lib/format'
 import { gridCell, gridState, visibleProviders } from '../lib/grid'
-import { AGENT_WIDTH, LABEL_WIDTH } from '../lib/layout'
+import { LABEL_WIDTH } from '../lib/layout'
 import type { Period, Provider, UsageCell, UsageGrid as Grid } from '../lib/types'
 
 const PROVIDER_LABEL: Record<Provider, string> = {
@@ -64,9 +64,9 @@ export function UsageGrid({ grid }: { grid: Grid | null }) {
   if (providers.length === 0)
     return <div className="usage-grid msg">표시할 데이터 없음</div>
 
-  // 에이전트 칸은 320px 고정 — 라벨(42px) + 프로바이더 N개. 창 너비는 이 콘텐츠에 맞춤(App).
+  // 라벨(고정) + 프로바이더 N개(1fr로 패널 너비를 채움 — 창 리사이즈에 따라 확장/축소).
   const cols = {
-    gridTemplateColumns: `${LABEL_WIDTH}px ${`${AGENT_WIDTH}px `.repeat(providers.length).trim()}`
+    gridTemplateColumns: `${LABEL_WIDTH}px repeat(${providers.length}, minmax(0, 1fr))`
   }
   return (
     <div className="usage-grid">

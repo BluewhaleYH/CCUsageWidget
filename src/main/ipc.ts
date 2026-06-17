@@ -28,8 +28,6 @@ import {
   disposeRunner,
   invalidateRunner
 } from './runnerFactory'
-import { sizer } from './sizing'
-import { store, type WidgetView } from './store'
 import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
 
@@ -37,37 +35,14 @@ type GetWindow = () => BrowserWindow | null
 
 /**
  * IPC 채널 등록.
- * - widget:* — 창 제어(접기/확장/종료).
+ * - widget:* — 창 제어(숨기기).
  * - setup:*  — 의존성 점검/설치 (Phase 1).
  * - host:*   — 호스트 관리 (Phase 2).
  * - usage:*  — 데이터 조회 (Phase 3).
  */
 export function registerIpc(_getWindow: GetWindow): void {
-  // --- widget 제어 (UI_SPEC §3.4~3.5) ---
-  // 접기(헤더만)/펼침(데이터 표시)로 리사이즈 + view 영속화. 크기 잠금은 WindowSizer가 관리.
-  ipcMain.handle('widget:setView', (e, view: WidgetView) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    if (!win) return
-    store.set('view', view)
-    sizer.setView(win, view)
-  })
-  ipcMain.handle('widget:getView', () => store.get('view') ?? 'normal')
-
-  // 콘텐츠 높이에 맞춰 창 높이 조정(펼침 상태에서만) — 하단 빈 공간 제거. 높이는 계속 고정.
-  ipcMain.handle('widget:fitHeight', (e, height: number) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    if (!win) return
-    sizer.fitHeight(win, height)
-  })
-
-  // 콘텐츠 너비(표시 에이전트 수×320)에 맞춰 창 너비 조정. 너비도 고정(드래그 불가).
-  ipcMain.handle('widget:fitWidth', (e, width: number) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    if (!win) return
-    sizer.fitWidth(win, width)
-  })
-
-  // 위젯 ✕ — 앱을 닫지 않고 트레이로 숨긴다(상시노출 off). 종료는 트레이 '종료'.
+  // --- widget 제어 ---
+  // 위젯 ─ — 앱을 닫지 않고 트레이로 숨긴다(상시노출 off). 종료는 트레이 '종료'.
   ipcMain.handle('widget:hide', () => {
     trayController.setAlwaysShow(false)
   })

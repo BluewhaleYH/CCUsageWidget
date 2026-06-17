@@ -1,19 +1,10 @@
 import { screen, type BrowserWindow } from 'electron'
-import {
-  clampWidth,
-  COLLAPSED_HEIGHT,
-  MAX_WIDTH,
-  MIN_WIDTH,
-  SHOWN_HEIGHT,
-  SHOWN_MAX,
-  SHOWN_MIN,
-  type WidgetView
-} from './store'
+import { MIN_HEIGHT, MIN_WIDTH } from './store'
 
 /** 우측 하단 구석 여백(px). */
 const EDGE_MARGIN = 12
 
-/** 주 디스플레이 작업영역 기준, 주어진 크기를 우측 하단에 앵커한 좌표. */
+/** 주 디스플레이 작업영역 기준, 주어진 크기를 우측 하단에 앵커한 좌표(최초 실행 기본 위치). */
 export function bottomRight(width: number, height: number): { x: number; y: number } {
   const { workArea } = screen.getPrimaryDisplay()
   return {
@@ -22,61 +13,26 @@ export function bottomRight(width: number, height: number): { x: number; y: numb
   }
 }
 
-/**
- * 창 크기를 뷰/콘텐츠에 맞춰 **잠가서**(min=max) 관리한다. (UI_SPEC 위젯 동작)
- * - **너비**: 콘텐츠(표시 에이전트 수×320 + 여백)에 맞춤 — 렌더러 `widget:fitWidth`로 전달.
- * - **높이**: collapsed=헤더만(고정), normal=콘텐츠 높이(`widget:fitHeight`).
- *
- * 너비·높이 잠금이 서로 덮어쓰지 않도록 두 값을 한곳에서 보관하고, 변경 시 함께 적용한다.
- * (과거: fitHeight가 매번 너비 잠금을 MIN_WIDTH로 풀어버려 너비 고정과 충돌)
- */
-class WindowSizer {
-  private view: WidgetView = 'normal'
-  private width = clampWidth(SHOWN_HEIGHT) // placeholder, init()에서 실제 너비로 교체
-  private normalHeight = SHOWN_HEIGHT
-
-  /** 시작 시 복원된 뷰/너비로 초기화. */
-  init(view: WidgetView, width: number): void {
-    this.view = view
-    this.width = clampWidth(width)
-    this.normalHeight = SHOWN_HEIGHT
-  }
-
-  /** 뷰 전환(접힘/펼침) — 높이만 바뀌고 너비는 유지. */
-  setView(win: BrowserWindow, view: WidgetView): void {
-    this.view = view
-    this.apply(win)
-  }
-
-  /** 펼침 콘텐츠 높이 반영(접힘 상태에서는 무시). */
-  fitHeight(win: BrowserWindow, height: number): void {
-    if (this.view !== 'normal') return
-    this.normalHeight = Math.max(SHOWN_MIN, Math.min(SHOWN_MAX, Math.round(height)))
-    this.apply(win)
-  }
-
-  /** 콘텐츠 너비 반영(에이전트 수 변화). */
-  fitWidth(win: BrowserWindow, width: number): void {
-    this.width = clampWidth(width)
-    this.apply(win)
-  }
-
-  private height(): number {
-    return this.view === 'collapsed' ? COLLAPSED_HEIGHT : this.normalHeight
-  }
-
-  /** 현재 너비·높이로 리사이즈하되 **위치(좌상단)는 유지**하고 그 크기에 잠근다(크기 드래그 불가, 이동은 가능). */
-  private apply(win: BrowserWindow): void {
-    const w = this.width
-    const h = this.height()
-    const b = win.getBounds() // 사용자가 옮긴 현재 위치 유지(우측 하단 고정 안 함)
-    // 크기 잠금 잠시 풀고 리사이즈 후 재잠금(min=max → 크기만 고정, 이동은 movable:true로 허용).
-    win.setMinimumSize(MIN_WIDTH, COLLAPSED_HEIGHT)
-    win.setMaximumSize(MAX_WIDTH, SHOWN_MAX)
-    win.setBounds({ x: b.x, y: b.y, width: w, height: h })
-    win.setMinimumSize(w, h)
-    win.setMaximumSize(w, h)
-  }
+/** 창이 놓인 디스플레이 작업영역의 **가로·세로 절반**을 최대 크기로 잡는다. */
+function halfMonitorMax(win: BrowserWindow): { maxW: number; maxH: number } {
+  const b = win.getBounds()
+  const { workArea } = screen.getDisplayNearestPoint({
+    x: b.x + Math.floor(b.width / 2),
+    y: b.y + Math.floor(b.height / 2)
+  })
+  return { maxW: Math.floor(workArea.width / 2), maxH: Math.floor(workArea.height / 2) }
 }
 
-export const sizer = new WindowSizer()
+/**
+ * 리사이즈 제약을 적용한다 — 최소(MIN_WIDTH×MIN_HEIGHT), 최대(현재 모니터 절반).
+ * 현재 크기가 최대를 넘으면 줄여서 맞춘다. (창 생성/이동 시 호출 — 모니터가 바뀌어도 추종)
+ */
+export function applyResizeBounds(win: BrowserWindow): void {
+  const { maxW, maxH } = halfMonitorMax(win)
+  win.setMinimumSize(MIN_WIDTH, MIN_HEIGHT)
+  win.setMaximumSize(Math.max(MIN_WIDTH, maxW), Math.max(MIN_HEIGHT, maxH))
+  const b = win.getBounds()
+  const w = Math.min(b.width, maxW)
+  const h = Math.min(b.height, maxH)
+  if (w !== b.width || h !== b.height) win.setBounds({ x: b.x, y: b.y, width: w, height: h })
+}
