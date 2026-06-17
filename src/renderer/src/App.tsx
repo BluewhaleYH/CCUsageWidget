@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Header } from './components/Header'
 import { HostFormModal } from './components/HostFormModal'
+import { LogPanel } from './components/LogPanel'
 import { SetupPanel } from './components/SetupPanel'
 import { StatusBar } from './components/StatusBar'
 import { UsageGrid } from './components/UsageGrid'
@@ -10,8 +11,12 @@ import type {
   HostListResult,
   HostSetupStatus,
   HostStatusUpdate,
+  LogEntry,
   UsageGrid as Grid
 } from './lib/types'
+
+/** 호스트별 로그 버퍼 최대 줄 수 */
+const LOG_CAP = 200
 
 /**
  * 위젯 루트. (UI_SPEC §2)
@@ -20,6 +25,7 @@ import type {
  */
 function App() {
   const [grids, setGrids] = useState<Record<string, Grid>>({})
+  const [logs, setLogs] = useState<Record<string, LogEntry[]>>({})
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [selectedHostId, setSelectedHostId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -40,6 +46,20 @@ function App() {
       if (g.hostId) setGrids((prev) => ({ ...prev, [g.hostId as string]: g }))
     })
     void window.api.usage.refresh()
+    return off
+  }, [])
+
+  // 활동 로그 구독 — 호스트별 버퍼에 누적(현재 보는 호스트만 표시)
+  useEffect(() => {
+    const off = window.api.log.onEntry((e) => {
+      const entry = e as LogEntry
+      const key = entry.hostId ?? '_global'
+      setLogs((prev) => {
+        const next = [...(prev[key] ?? []), entry]
+        if (next.length > LOG_CAP) next.splice(0, next.length - LOG_CAP)
+        return { ...prev, [key]: next }
+      })
+    })
     return off
   }, [])
 
@@ -141,6 +161,7 @@ function App() {
         </div>
       </main>
       <StatusBar grid={currentGrid} setupStatus={setupStatus} onOpenSetup={() => setSetupOpen(true)} />
+      <LogPanel entries={currentHost ? (logs[currentHost.id] ?? []) : []} />
 
       {modalOpen && (
         <HostFormModal

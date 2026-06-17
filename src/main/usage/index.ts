@@ -29,6 +29,14 @@ const TARGETS: Array<{ provider: Provider; period: Period }> = PERIODS.flatMap((
   PROVIDERS.map((provider) => ({ provider, period }))
 )
 
+/** 조회 진행 로그 콜백 (위젯 로그 영역용). phase: start|done|empty|fail */
+export type UsageLog = (
+  provider: Provider,
+  period: Period,
+  phase: 'start' | 'done' | 'empty' | 'fail',
+  detail?: string
+) => void
+
 /**
  * 선택 호스트(러너)에서 ccusage 6종(daily/monthly × claude/codex/gemini)을 조회한다. (DATA_SPEC §2.1)
  *
@@ -36,12 +44,19 @@ const TARGETS: Array<{ provider: Provider; period: Period }> = PERIODS.flatMap((
  * - 각 호출은 **독립적으로 성공/실패** 처리: 실패한 셀은 `present:false`로 채운다.
  * - 전부 실패하면 연결 문제로 보고 `connection:'disconnected'`.
  */
-export async function fetchUsageCells(runner: CommandRunner): Promise<FetchResult> {
+export async function fetchUsageCells(
+  runner: CommandRunner,
+  onLog?: UsageLog
+): Promise<FetchResult> {
   const results = await Promise.all(
     TARGETS.map(async ({ provider, period }) => {
+      onLog?.(provider, period, 'start')
       const res = await runCcusage(runner, ccusageArgs(provider, period))
       // 실패 시 raw='' → parseUsage가 present:false 셀을 반환
       const cell = parseUsage(provider, period, res.raw)
+      if (!res.ok) onLog?.(provider, period, 'fail', res.error)
+      else if (!cell.present) onLog?.(provider, period, 'empty')
+      else onLog?.(provider, period, 'done', cell.cost.toFixed(2))
       return { ok: res.ok, cell }
     })
   )
@@ -85,8 +100,9 @@ export function getCell(
 export async function fetchUsageGrid(
   runner: CommandRunner,
   host: Pick<HostEntry, 'id' | 'alias'> | null,
-  now: string
+  now: string,
+  onLog?: UsageLog
 ): Promise<UsageGrid> {
-  const fetchResult = await fetchUsageCells(runner)
+  const fetchResult = await fetchUsageCells(runner, onLog)
   return assembleGrid({ host, fetchResult, now })
 }
