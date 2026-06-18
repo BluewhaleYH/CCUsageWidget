@@ -1,3 +1,5 @@
+import { TierInfo } from './TierInfo'
+
 interface HeaderProps {
   /** 현재 호스트 별칭(없으면 안내 문구) */
   alias: string
@@ -50,6 +52,7 @@ export function Header({
         )}
       </div>
       <div className="controls">
+        <TierInfo />
         <button onClick={onHide} title="트레이로 숨기기">
           ─
         </button>
