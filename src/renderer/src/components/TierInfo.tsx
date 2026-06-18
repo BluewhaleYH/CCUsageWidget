@@ -37,7 +37,9 @@ export function TierInfo() {
           </tbody>
         </table>
         <p className="tier-note">
-          * codex는 chatgpt와 한도를 반씩 나누어쓰며, 여기서는 codex의 사용량만 집계됩니다
+          * codex는 chatgpt와 한도를 반씩 나누어쓰며,
+          <br />
+          여기서는 codex의 사용량만 집계됩니다
         </p>
       </div>
     </span>
