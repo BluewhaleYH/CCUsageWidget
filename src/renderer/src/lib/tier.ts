@@ -26,9 +26,13 @@ const TIER_OFFSET: Record<Tier, number> = {
   T4: 446
 }
 
-/** 에이전트·티어의 월간 한도($). */
+/**
+ * 에이전트·티어의 월간 한도($).
+ * Codex는 ChatGPT와 한도를 **반씩 나눠** 쓰므로(여기서는 Codex 사용량만 집계) **단독 한도 = 절반**.
+ */
 export function limitFor(provider: Provider, tier: Tier): number {
-  return T1_BASE[provider] + TIER_OFFSET[tier]
+  const base = T1_BASE[provider] + TIER_OFFSET[tier]
+  return provider === 'codex' ? base / 2 : base
 }
 
 /** 한도 대비 사용 비율(%, 정수 반올림). 한도 0이면 0. */
