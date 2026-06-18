@@ -29,6 +29,7 @@ import {
   invalidateRunner
 } from './runnerFactory'
 import { logBus } from './logBus'
+import { setLogArea } from './sizing'
 import { store } from './store'
 import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
@@ -52,6 +53,15 @@ export function registerIpc(_getWindow: GetWindow): void {
   // 위젯 ─ — 앱을 닫지 않고 트레이로 숨긴다(상시노출 off). 종료는 트레이 '종료'.
   ipcMain.handle('widget:hide', () => {
     trayController.setAlwaysShow(false)
+  })
+
+  // 로그 영역 표시 여부(영속) — 숨기면 창 높이가 로그 영역만큼 줄어 데이터 영역은 유지.
+  ipcMain.handle('widget:getLogVisible', () => store.get('logVisible') ?? true)
+  ipcMain.handle('widget:setLogVisible', (e, visible: boolean) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    store.set('logVisible', visible)
+    setLogArea(win, visible)
   })
 
   // --- tier (월간 한도 대비 % — 호스트별 + 종합 에이전트 티어 선택, 영속) ---

@@ -29,6 +29,8 @@ export interface StoreSchema {
    * 재시작 시 복원.
    */
   alwaysShow?: boolean
+  /** 하단 로그 영역 표시 여부(기본 true) — 숨기면 창 높이가 로그 영역만큼 줄어든다. */
+  logVisible?: boolean
   /**
    * 호스트별 의존성 점검 리포트 캐시 (SETUP_SPEC §4.7).
    * 키: hostId (Phase 1은 'local'). 비민감 메타만 저장한다.

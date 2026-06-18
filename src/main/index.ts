@@ -6,8 +6,8 @@ import { registerIpc } from './ipc'
 import { logBus } from './logBus'
 import { disposeAllRunners } from './runnerFactory'
 import { fixGuiPath } from './shellPath'
-import { applyResizeBounds, bottomRight } from './sizing'
-import { DEFAULT_HEIGHT, DEFAULT_WIDTH, MIN_HEIGHT, MIN_WIDTH, store } from './store'
+import { applyResizeBounds, bottomRight, initLogVisible, minHeight } from './sizing'
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH, MIN_WIDTH, store } from './store'
 import { trayController } from './tray'
 import { usagePoller } from './usage/poller'
 
@@ -15,8 +15,10 @@ let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   const bounds = store.get('windowBounds')
+  // 로그 영역 표시 상태를 먼저 복원(최소 높이 계산에 반영)
+  initLogVisible(store.get('logVisible') ?? true)
   const width = Math.max(MIN_WIDTH, bounds?.width ?? DEFAULT_WIDTH)
-  const height = Math.max(MIN_HEIGHT, bounds?.height ?? DEFAULT_HEIGHT)
+  const height = Math.max(minHeight(), bounds?.height ?? DEFAULT_HEIGHT)
   // 저장된 위치가 있으면 복원, 없으면(최초) 우측 하단 구석. 이후 드래그 이동·리사이즈 가능.
   const pos =
     bounds?.x != null && bounds?.y != null
@@ -29,7 +31,7 @@ function createWindow(): void {
     x: pos.x,
     y: pos.y,
     minWidth: MIN_WIDTH,
-    minHeight: MIN_HEIGHT,
+    minHeight: minHeight(),
     show: false,
     // 위젯 형태: 프레임 없음 / 투명 / 항상 위 / 작업표시줄 숨김 / 드래그 이동·리사이즈 가능
     frame: false,
