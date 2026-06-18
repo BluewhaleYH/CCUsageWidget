@@ -126,6 +126,10 @@ app.whenReady().then(() => {
 
   // 글로벌 핫키로 표시/숨김 토글 (Cmd/Ctrl+Shift+U)
   globalShortcut.register('CommandOrControl+Shift+U', () => trayController.toggle())
+  // 글로벌 핫키로 로그 영역 토글 (Cmd/Ctrl+Shift+L) — 렌더러에 알림
+  globalShortcut.register('CommandOrControl+Shift+L', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('log:toggle')
+  })
 
   // 30초 사용량 폴링 시작 (DATA_SPEC §2.3) — 현재 선택 호스트만 조회해 usage:update 푸시
   usagePoller.start(() => mainWindow)

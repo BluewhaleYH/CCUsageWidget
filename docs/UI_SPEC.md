@@ -34,6 +34,9 @@
   - **드래그 이동**: 헤더바 `-webkit-app-region: drag`(버튼류 `no-drag`). 위치는 `windowBounds.x/y`에 저장·복원. **최초 실행만** 우측 하단.
   - **사용자 리사이즈**: `resizable:true`. 최소 `MIN_WIDTH×MIN_HEIGHT`(280×160), **최대 = 현재 모니터 작업영역의 가로·세로 절반**(`applyResizeBounds`, 이동 시 모니터 추종). 크기는 `windowBounds.width/height`에 저장·복원.
   - 콘텐츠는 창 크기를 채운다: 캐러셀 패널 = 뷰포트 100%, 에이전트 칸 = `1fr`(창 너비에 맞춰 확장/축소), 넘치면 세로 스크롤.
+- **하단 로그 영역**: **전 호스트 통합** 활동 로그(`HH:MM:SS :: pc이름 :: 메시지`). 데이터 조회는 호스트당
+  `데이터 받아오는 중…`/`갱신 완료`로 1줄씩만. 스크롤은 동작하되 스크롤바는 숨김. 푸터의 `로그` 버튼 또는
+  **글로벌 핫키 `Cmd/Ctrl+Shift+L`**로 표시/숨김(localStorage 영속).
 - **시스템 트레이(숨겨진 아이콘) 상주**: 표시/숨김 토글은 **트레이 좌클릭** 또는 **글로벌 핫키 `Cmd/Ctrl+Shift+U`**.
   - 상태는 `electron-store`(`alwaysShow`)에 영속. 창을 숨겨도 앱은 트레이에 상주(`window-all-closed`에서 종료 안 함).
   - 트레이 **우클릭 메뉴: `종료`만**(`app.quit`).

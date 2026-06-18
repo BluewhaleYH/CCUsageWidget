@@ -36,7 +36,9 @@ interface DisplayHost {
  */
 function App() {
   const [grids, setGrids] = useState<Record<string, Grid>>({})
-  const [logs, setLogs] = useState<Record<string, LogEntry[]>>({})
+  // 로그는 전 호스트 통합 단일 버퍼(현재 보는 패널과 무관하게 모두 기록)
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [logVisible, setLogVisible] = useState(() => localStorage.getItem('logVisible') !== '0')
   const [tiers, setTiers] = useState<Record<string, Record<string, string>>>({})
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [viewIndex, setViewIndex] = useState(0)
@@ -65,19 +67,28 @@ function App() {
     void window.api.tier.getAll().then(setTiers)
   }, [])
 
-  // 활동 로그 구독 — 호스트별 버퍼에 누적
+  // 활동 로그 구독 — 전 호스트 통합 단일 버퍼에 누적
   useEffect(() => {
     const off = window.api.log.onEntry((e) => {
       const entry = e as LogEntry
-      const key = entry.hostId ?? '_global'
       setLogs((prev) => {
-        const next = [...(prev[key] ?? []), entry]
+        const next = [...prev, entry]
         if (next.length > LOG_CAP) next.splice(0, next.length - LOG_CAP)
-        return { ...prev, [key]: next }
+        return next
       })
     })
     return off
   }, [])
+
+  // 로그 영역 토글(버튼/핫키 Ctrl+Shift+L) — localStorage에 영속
+  const toggleLog = useCallback(() => {
+    setLogVisible((v) => {
+      const next = !v
+      localStorage.setItem('logVisible', next ? '1' : '0')
+      return next
+    })
+  }, [])
+  useEffect(() => window.api.log.onToggle(toggleLog), [toggleLog])
 
   // 호스트가 2개 이상이면 맨 앞에 종합(가상) 추가
   const showAgg = hosts.length >= 2
@@ -155,17 +166,6 @@ function App() {
     await loadHosts()
   }, [currentRealId, loadHosts])
 
-  // 로그: 실제 호스트면 그 호스트, 종합이면 전 호스트 로그를 시간순 병합
-  const currentLogs: LogEntry[] = current?.virtual
-    ? Object.entries(logs)
-        .filter(([k]) => k !== '_global')
-        .flatMap(([, v]) => v)
-        .sort((a, b) => a.ts.localeCompare(b.ts))
-        .slice(-LOG_CAP)
-    : current
-      ? (logs[current.id] ?? [])
-      : []
-
   return (
     <div ref={rootRef} className="widget">
       <Header
@@ -209,8 +209,10 @@ function App() {
         grid={currentGrid}
         setupStatus={current?.virtual ? null : setupStatus}
         onOpenSetup={current?.virtual ? undefined : () => setSetupOpen(true)}
+        logVisible={logVisible}
+        onToggleLog={toggleLog}
       />
-      <LogPanel entries={currentLogs} />
+      {logVisible && <LogPanel entries={logs} />}
 
       {modalOpen && (
         <HostFormModal

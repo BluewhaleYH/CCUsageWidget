@@ -299,7 +299,7 @@ body {
   min-height: 42px;
 }
 
-/* 하단 로그 영역 — 현재 호스트 활동 로그 */
+/* 하단 로그 영역 — 전 호스트 통합 활동 로그 */
 .logpanel {
   flex: 0 0 auto;
   height: 96px;
@@ -310,6 +310,29 @@ body {
   font-family: 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
   font-size: 10.5px;
   line-height: 1.5;
+  /* 스크롤은 동작하되 스크롤바는 숨김 */
+  scrollbar-width: none;
+}
+
+.logpanel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.log-toggle {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  color: #bdbdbd;
+  cursor: pointer;
+}
+
+.log-toggle.on {
+  color: #d8d8d8;
+  background: rgba(120, 150, 240, 0.22);
 }
 
 .log-empty {

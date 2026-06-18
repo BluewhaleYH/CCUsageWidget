@@ -65,6 +65,12 @@ const api = {
       const listener = (_e: Electron.IpcRendererEvent, entry: unknown): void => callback(entry)
       ipcRenderer.on('log:entry', listener)
       return () => ipcRenderer.removeListener('log:entry', listener)
+    },
+    /** 로그 영역 토글 핫키(Ctrl/Cmd+Shift+L) 구독. 해제 함수를 반환한다. */
+    onToggle: (callback: () => void): (() => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('log:toggle', listener)
+      return () => ipcRenderer.removeListener('log:toggle', listener)
     }
   },
   tier: {

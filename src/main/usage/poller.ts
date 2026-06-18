@@ -3,7 +3,7 @@ import { listHosts, updateHost } from '../hosts/repository'
 import type { HostEntry } from '../hosts'
 import { logBus } from '../logBus'
 import { createRunnerForHost, disposeRunner } from '../runnerFactory'
-import { fetchUsageGrid, type UsageLog } from './index'
+import { fetchUsageGrid } from './index'
 import type { UsageGrid } from './types'
 
 /** 폴링 주기 (DATA_SPEC §2.3) */
@@ -83,6 +83,8 @@ class UsagePoller {
       })
     }
 
+    // 데이터 로그는 호스트당 1줄로 통합(시작/완료). 6종 개별 로그는 남기지 않는다.
+    logBus.emit(host.id, host.alias, '데이터 받아오는 중…')
     const now = new Date().toISOString()
     let grid: UsageGrid
     try {
@@ -102,6 +104,10 @@ class UsagePoller {
     this.lastGrids.set(host.id, grid)
     this.send('usage:update', grid)
 
+    if (grid.status === 'error')
+      logBus.emit(host.id, host.alias, `데이터 갱신 실패: ${grid.error ?? '오류'}`, 'error')
+    else logBus.emit(host.id, host.alias, '데이터 갱신 완료')
+
     if (grid.status !== 'loading') {
       const lastStatus = grid.connection
       updateHost(host.id, { lastStatus, lastCheckedAt: grid.updatedAt })
@@ -117,15 +123,8 @@ class UsagePoller {
 
   private async fetch(host: HostEntry, now: string): Promise<UsageGrid> {
     const runner = createRunnerForHost(host.id)
-    const onLog: UsageLog = (provider, period, phase, detail) => {
-      const label = `${provider} ${period}`
-      if (phase === 'start') logBus.emit(host.id, host.alias, `${label} 결과 받아오는 중…`)
-      else if (phase === 'done') logBus.emit(host.id, host.alias, `${label} 완료 ($${detail})`)
-      else if (phase === 'empty') logBus.emit(host.id, host.alias, `${label} 데이터 없음`)
-      else logBus.emit(host.id, host.alias, `${label} 실패: ${detail ?? '오류'}`, 'error')
-    }
     try {
-      return await fetchUsageGrid(runner, host, now, onLog)
+      return await fetchUsageGrid(runner, host, now)
     } finally {
       disposeRunner(runner)
     }

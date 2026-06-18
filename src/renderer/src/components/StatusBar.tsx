@@ -8,12 +8,15 @@ interface Props {
   setupStatus: HostSetupStatus | null
   /** 칩 클릭 시 점검/설치 패널 열기(없으면 표시 전용) */
   onOpenSetup?: () => void
+  /** 로그 영역 표시 여부 + 토글(버튼) */
+  logVisible: boolean
+  onToggleLog: () => void
 }
 
 /**
  * 상태 푸터 — 마지막 갱신 시각 + setup 상태 칩 + 연결 인디케이터. (UI_SPEC §3.8 / SETUP_SPEC §4.7)
  */
-export function StatusBar({ grid, setupStatus, onOpenSetup }: Props) {
+export function StatusBar({ grid, setupStatus, onOpenSetup, logVisible, onToggleLog }: Props) {
   const loading = grid?.status === 'loading'
   const connected = grid?.connection === 'connected'
   const updatedLabel = loading
@@ -35,6 +38,14 @@ export function StatusBar({ grid, setupStatus, onOpenSetup }: Props) {
     <footer className="statusbar">
       <span className="updated">{updatedLabel}</span>
       <span className="right">
+        <button
+          type="button"
+          className={`log-toggle${logVisible ? ' on' : ''}`}
+          onClick={onToggleLog}
+          title="로그 영역 표시/숨김 (Ctrl/Cmd+Shift+L)"
+        >
+          로그
+        </button>
         {chipProps &&
           (onOpenSetup ? (
             <button type="button" onClick={onOpenSetup} {...chipProps} />
