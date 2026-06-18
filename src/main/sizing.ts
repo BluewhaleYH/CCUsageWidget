@@ -4,6 +4,22 @@ import { MIN_HEIGHT, MIN_WIDTH } from './store'
 /** 우측 하단 구석 여백(px). */
 const EDGE_MARGIN = 12
 
+/** 하단 로그 영역 높이(px) — .logpanel(96) + border(1). 숨김/표시 시 창 높이를 이만큼 가감. */
+export const LOG_AREA_HEIGHT = 97
+
+/** 현재 로그 영역 표시 여부(최소 높이·창 높이 계산에 사용). */
+let logAreaVisible = true
+
+/** 시작 시 저장된 로그 표시 상태로 초기화(창 높이는 이미 그 상태로 저장돼 있음 — 변경 안 함). */
+export function initLogVisible(visible: boolean): void {
+  logAreaVisible = visible
+}
+
+/** 로그 영역 유무에 따른 최소 높이(로그 표시: MIN_HEIGHT, 숨김: 그만큼 낮게). */
+export function minHeight(): number {
+  return logAreaVisible ? MIN_HEIGHT : MIN_HEIGHT - LOG_AREA_HEIGHT
+}
+
 /** 주 디스플레이 작업영역 기준, 주어진 크기를 우측 하단에 앵커한 좌표(최초 실행 기본 위치). */
 export function bottomRight(width: number, height: number): { x: number; y: number } {
   const { workArea } = screen.getPrimaryDisplay()
@@ -29,10 +45,27 @@ function halfMonitorMax(win: BrowserWindow): { maxW: number; maxH: number } {
  */
 export function applyResizeBounds(win: BrowserWindow): void {
   const { maxW, maxH } = halfMonitorMax(win)
-  win.setMinimumSize(MIN_WIDTH, MIN_HEIGHT)
-  win.setMaximumSize(Math.max(MIN_WIDTH, maxW), Math.max(MIN_HEIGHT, maxH))
+  const minH = minHeight()
+  win.setMinimumSize(MIN_WIDTH, minH)
+  win.setMaximumSize(Math.max(MIN_WIDTH, maxW), Math.max(minH, maxH))
   const b = win.getBounds()
   const w = Math.min(b.width, maxW)
   const h = Math.min(b.height, maxH)
   if (w !== b.width || h !== b.height) win.setBounds({ x: b.x, y: b.y, width: w, height: h })
+}
+
+/**
+ * 로그 영역 표시/숨김에 맞춰 **창 높이를 로그 영역만큼 가감**한다(데이터 영역 크기는 유지).
+ * 상단(좌상단) 고정 — 아래쪽에서 줄거나 늘어난다. 이미 그 상태면 no-op.
+ */
+export function setLogArea(win: BrowserWindow, visible: boolean): void {
+  if (visible === logAreaVisible) return
+  logAreaVisible = visible
+  const minH = minHeight()
+  const { maxH } = halfMonitorMax(win)
+  const b = win.getBounds()
+  const target = b.height + (visible ? LOG_AREA_HEIGHT : -LOG_AREA_HEIGHT)
+  const h = Math.max(minH, Math.min(maxH, target))
+  win.setMinimumSize(MIN_WIDTH, minH)
+  win.setBounds({ x: b.x, y: b.y, width: b.width, height: h })
 }

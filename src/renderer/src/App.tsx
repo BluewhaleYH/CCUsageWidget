@@ -38,7 +38,7 @@ function App() {
   const [grids, setGrids] = useState<Record<string, Grid>>({})
   // 로그는 전 호스트 통합 단일 버퍼(현재 보는 패널과 무관하게 모두 기록)
   const [logs, setLogs] = useState<LogEntry[]>([])
-  const [logVisible, setLogVisible] = useState(() => localStorage.getItem('logVisible') !== '0')
+  const [logVisible, setLogVisible] = useState(true)
   const [tiers, setTiers] = useState<Record<string, Record<string, string>>>({})
   const [hosts, setHosts] = useState<HostEntry[]>([])
   const [viewIndex, setViewIndex] = useState(0)
@@ -80,11 +80,16 @@ function App() {
     return off
   }, [])
 
-  // 로그 영역 토글(버튼/핫키 Ctrl+Shift+L) — localStorage에 영속
+  // 저장된 로그 영역 표시 상태 복원
+  useEffect(() => {
+    void window.api.widget.getLogVisible().then(setLogVisible)
+  }, [])
+
+  // 로그 영역 토글(버튼/핫키 Ctrl+Shift+L) — 메인이 창 높이를 로그 영역만큼 가감 + 영속
   const toggleLog = useCallback(() => {
     setLogVisible((v) => {
       const next = !v
-      localStorage.setItem('logVisible', next ? '1' : '0')
+      void window.api.widget.setLogVisible(next)
       return next
     })
   }, [])

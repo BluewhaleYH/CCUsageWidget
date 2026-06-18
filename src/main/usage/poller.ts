@@ -7,7 +7,7 @@ import { fetchUsageGrid } from './index'
 import type { UsageGrid } from './types'
 
 /** 폴링 주기 (DATA_SPEC §2.3) */
-const POLL_INTERVAL_MS = 30_000
+const POLL_INTERVAL_MS = 60_000
 
 type GetWindow = () => BrowserWindow | null
 
@@ -83,8 +83,7 @@ class UsagePoller {
       })
     }
 
-    // 데이터 로그는 호스트당 1줄로 통합(시작/완료). 6종 개별 로그는 남기지 않는다.
-    logBus.emit(host.id, host.alias, '데이터 받아오는 중…')
+    // 데이터 로그는 완료(또는 실패)만 1줄. '받아오는 중'은 남기지 않는다.
     const now = new Date().toISOString()
     let grid: UsageGrid
     try {

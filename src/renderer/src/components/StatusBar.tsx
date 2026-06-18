@@ -42,9 +42,9 @@ export function StatusBar({ grid, setupStatus, onOpenSetup, logVisible, onToggle
           type="button"
           className={`log-toggle${logVisible ? ' on' : ''}`}
           onClick={onToggleLog}
-          title="로그 영역 표시/숨김 (Ctrl/Cmd+Shift+L)"
+          title="로그 영역 (Ctrl/Cmd+Shift+L)"
         >
-          로그
+          {logVisible ? '숨기기' : '펼치기'}
         </button>
         {chipProps &&
           (onOpenSetup ? (

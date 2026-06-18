@@ -117,7 +117,12 @@ const api = {
   },
   widget: {
     /** 위젯 숨김(트레이로) — 앱 종료가 아님 */
-    hide: (): Promise<void> => ipcRenderer.invoke('widget:hide')
+    hide: (): Promise<void> => ipcRenderer.invoke('widget:hide'),
+    /** 로그 영역 표시 여부 조회(시작 시 복원용) */
+    getLogVisible: (): Promise<boolean> => ipcRenderer.invoke('widget:getLogVisible'),
+    /** 로그 영역 표시/숨김 설정 — 창 높이가 로그 영역만큼 가감됨 */
+    setLogVisible: (visible: boolean): Promise<void> =>
+      ipcRenderer.invoke('widget:setLogVisible', visible)
   }
 }
 
