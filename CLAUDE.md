@@ -2,10 +2,10 @@
 
 이 파일은 Claude Code(claude.ai/code)가 이 저장소에서 작업할 때 참고하는 가이드입니다.
 
-> ℹ️ 진행 상태: **Phase 1(SETUP) 완료** — 의존성 점검/설치 로직(`src/main/setup/`)과
-> `setup:*` IPC 계약이 구현됨(명령 실행은 `CommandRunner` 추상화: 로컬 now / SSH는 Phase 2).
-> Phase 0 스캐폴딩(electron-vite + React + TS)은 그대로 동작합니다.
-> 다음 단계는 `docs/IMPLEMENTATION_TODO.md`의 Phase 2(CONNECTION)부터 이어갑니다.
+> ℹ️ 진행 상태: **v0.3.0 — 4-Phase 빌드 완료 + 실사용 피드백 반영까지 끝나 배포·안정화 단계.**
+> 현재 동작하는 제품 전체 상태·아키텍처·결정·다음 할 일은 **`docs/HANDOFF.md`를 먼저 읽으세요(최신 단일 출처).**
+> (트레이 상주 위젯 / 전 호스트 캐러셀 + 종합 패널 / 60초 폴링 / 활동 로그 / 에이전트별 티어 한도% 등)
+> SPEC 4종은 세부 명세, `IMPLEMENTATION_TODO.md`는 초기 빌드 기록(대부분 완료).
 > 코드가 SPEC과 어긋나면 SPEC을 먼저 갱신한 뒤 이 문서도 동기화하세요.
 
 ## 🚀 세션 시작 시 반드시 따를 절차 (Session Startup)
